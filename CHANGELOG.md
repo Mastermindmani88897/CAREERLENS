@@ -10,7 +10,6 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### Planned
-- Phase 2: Python virtual environment and FastAPI backend scaffold
 - Phase 3: PostgreSQL database configuration and pgvector setup
 - Phase 4: Core data models and Alembic migrations
 - Phase 5: Authentication module (JWT, bcrypt)
@@ -19,6 +18,25 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Phase 8: Security and dev tooling configuration
 - Phase 9: Testing foundation
 - Phase 10: 30% milestone documentation and commit
+
+---
+
+## [0.1.0] — 2026-10-03
+
+### Added
+- Python 3.12 virtual environment configuration
+- Minimal backend dependency definitions (`backend/requirements.txt` and `backend/requirements-dev.txt`)
+- FastAPI application entry point (`backend/app/main.py`)
+- Application settings and configuration loader (`backend/app/core/config.py`)
+- Modular API v1 router structure (`backend/app/api/v1/api.py`)
+- Health check endpoint (`backend/app/api/v1/endpoints/health.py`) with `GET /api/v1/health` and `GET /health`
+- Tool configurations for pytest and ruff (`backend/pyproject.toml`)
+- Automated test suite verifying health endpoints, OpenAPI schema, and auth-less access (`backend/tests/`)
+
+### Security
+- Verified zero credentials, secrets, or real API keys in source code
+- Automated AST security scan via Bandit passing with zero issues
+- Confirmed health check operates completely isolated with no database or external service dependencies
 
 ---
 
