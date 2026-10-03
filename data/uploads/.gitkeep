@@ -1,0 +1,3 @@
+# This file exists to track the data/uploads/ directory structure in Git.
+# The CONTENTS of this directory are gitignored — uploaded resume files are never committed.
+# See .gitignore: data/uploads/* with !data/uploads/.gitkeep exception.

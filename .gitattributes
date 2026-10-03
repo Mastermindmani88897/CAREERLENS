@@ -1,0 +1,33 @@
+# CareerLens — Git Line Ending Normalization
+# Ensures consistent line endings across Windows and Linux/macOS contributors
+
+# Default: normalize all text files to LF in the repository
+* text=auto eol=lf
+
+# Force LF for specific file types
+*.py    text eol=lf
+*.js    text eol=lf
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.jsx   text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.env.example text eol=lf
+*.gitignore   text eol=lf
+*.gitkeep     text eol=lf
+*.sql   text eol=lf
+*.txt   text eol=lf
+*.sh    text eol=lf
+
+# Binary files — do not modify line endings
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.pdf   binary
+*.docx  binary
+*.zip   binary
+*.tar.gz binary
