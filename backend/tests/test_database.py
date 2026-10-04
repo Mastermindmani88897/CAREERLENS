@@ -111,3 +111,73 @@ def test_declarative_base_model_subclassing():
         id = Column(Integer, primary_key=True)
 
     assert SampleModel.__tablename__ == "sample_test_model"
+
+
+@pytest.mark.asyncio
+async def test_careerlens_user_least_privilege():
+    """Verify that careerlens_user role adheres to least-privilege (NOCREATEDB, NOSUPERUSER)."""
+    async with async_session_factory() as session:
+        result = await session.execute(
+            text(
+                "SELECT rolname, rolsuper, rolcreatedb, rolcreaterole, rolcanlogin "
+                "FROM pg_roles WHERE rolname = 'careerlens_user';"
+            )
+        )
+        row = result.mappings().one()
+        assert row["rolname"] == "careerlens_user"
+        assert row["rolcanlogin"] is True, "User should be able to log in"
+        assert row["rolcreatedb"] is False, "Least privilege violated: CREATEDB must be False"
+        assert row["rolsuper"] is False, "Least privilege violated: SUPERUSER must be False"
+        assert row["rolcreaterole"] is False, "Least privilege violated: CREATEROLE must be False"
+
+
+def test_alembic_infrastructure_configuration():
+    """Verify that Alembic configuration files and directory structure exist and are valid."""
+    from pathlib import Path
+
+    from alembic.config import Config
+
+    from alembic import command
+
+    backend_dir = Path(__file__).resolve().parent.parent
+    ini_path = backend_dir / "alembic.ini"
+    alembic_dir = backend_dir / "alembic"
+    versions_dir = alembic_dir / "versions"
+
+    assert ini_path.exists(), "alembic.ini must exist in backend root"
+    assert alembic_dir.exists(), "alembic migration directory must exist"
+    assert (alembic_dir / "env.py").exists(), "alembic/env.py must exist"
+    assert versions_dir.exists(), "alembic/versions directory must exist"
+
+    # Verify Alembic can read configuration and inspect heads without error
+    alembic_cfg = Config(str(ini_path))
+    # command.heads should run without raising any exceptions
+    command.heads(alembic_cfg)
+
+
+@pytest.mark.asyncio
+async def test_phase3_boundary_no_application_models():
+    """Verify that Phase 4 application models and tables do NOT exist yet."""
+    phase4_tables = {
+        "users",
+        "candidate_profiles",
+        "resumes",
+        "skills",
+        "educations",
+        "experiences",
+        "projects",
+        "certifications",
+        "opportunities",
+        "opportunity_skills",
+        "matches",
+        "applications",
+        "application_status_history",
+        "interview_prep",
+    }
+    async with async_session_factory() as session:
+        result = await session.execute(
+            text("SELECT tablename FROM pg_tables WHERE schemaname = 'public';")
+        )
+        existing_tables = {row[0] for row in result.fetchall()}
+        intersection = phase4_tables.intersection(existing_tables)
+        assert not intersection, f"Phase 4 tables exist prematurely: {intersection}"

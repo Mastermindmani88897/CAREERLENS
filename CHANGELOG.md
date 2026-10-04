@@ -25,14 +25,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 - PostgreSQL database configuration with `pgvector` v0.8.6 extension integration
 - Dedicated application database (`careerlens_db`) and test database (`careerlens_test`) initialized
-- Asynchronous database stack dependencies: `sqlalchemy[asyncio]`, `asyncpg`, `pgvector`, and `greenlet`
+- Asynchronous database stack dependencies: `sqlalchemy[asyncio]`, `asyncpg`, `pgvector`, `greenlet`, and `alembic`
 - Database layer (`backend/app/db/`): DeclarativeBase model foundation, async engine with connection pooling and `NullPool` test support, and `get_db` async session generator
+- Alembic database migration infrastructure (`backend/alembic.ini`, `backend/alembic/env.py`, `backend/alembic/script.py.mako`, `backend/alembic/versions/`) configured with dynamic settings-based URL loading
 - Database and pgvector health check endpoint `GET /api/v1/health/db` (with `/health/db` root alias)
 - Database setup and credential orchestration script (`scripts/setup_db.py`)
-- Automated test suite validating database async connection, session lifecycle, vector similarity distance metrics (L2, cosine), and DB health endpoints (`backend/tests/test_database.py`)
+- Automated test suite validating database async connection, session lifecycle, vector similarity distance metrics (L2, cosine), role least-privilege, Alembic configuration, and DB health endpoints (`backend/tests/test_database.py`)
 
 ### Security
 - Zero credentials or passwords hardcoded in source code, scripts, or commit history
+- Application database user `careerlens_user` hardened to least-privilege attributes (NOCREATEDB, NOSUPERUSER)
 - Local secrets isolated exclusively within gitignored `.env`
 - Static security analysis via Bandit passing with zero issues across application code and scripts
 
