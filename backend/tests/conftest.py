@@ -1,6 +1,10 @@
+import os
 from collections.abc import Generator
 
 import pytest
+
+os.environ["ENVIRONMENT"] = "test"
+
 from fastapi.testclient import TestClient
 
 from app.main import app

@@ -2,7 +2,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.api import api_router
-from app.api.v1.endpoints.health import HealthResponse, health_check
+from app.api.v1.endpoints.health import (
+    DatabaseHealthResponse,
+    HealthResponse,
+    db_health_check,
+    health_check,
+)
 from app.core.config import settings
 
 app = FastAPI(
@@ -23,15 +28,22 @@ if settings.CORS_ORIGINS:
         allow_headers=["*"],
     )
 
-# Include API v1 router: provides /api/v1/health
+# Include API v1 router: provides /api/v1/health and /api/v1/health/db
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
-# Also expose /health directly at root level
+# Expose health checks directly at root level as well
 app.add_api_route(
     "/health",
     health_check,
     methods=["GET"],
     response_model=HealthResponse,
+    tags=["health"],
+)
+app.add_api_route(
+    "/health/db",
+    db_health_check,
+    methods=["GET"],
+    response_model=DatabaseHealthResponse,
     tags=["health"],
 )
 
