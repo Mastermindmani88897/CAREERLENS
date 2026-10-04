@@ -60,3 +60,31 @@ class EducationLevel(StrEnum):
     MASTER = "master"
     PHD = "phd"
     ANY = "any"
+
+
+class OpportunitySource(StrEnum):
+    """Source origin of opportunity/job listing."""
+
+    SYNTHETIC = "synthetic"
+    MANUAL = "manual"
+    API = "api"
+
+
+class EligibilityStatus(StrEnum):
+    """Eligibility status resulting from candidate evaluation."""
+
+    ELIGIBLE = "eligible"
+    PARTIAL = "partial"
+    REVIEW_REQUIRED = "review_required"
+
+
+class ApplicationStatus(StrEnum):
+    """Application tracking lifecycle status."""
+
+    SAVED = "saved"
+    APPLIED = "applied"
+    OA = "oa"
+    INTERVIEW = "interview"
+    OFFER = "offer"
+    REJECTED = "rejected"
+    WITHDRAWN = "withdrawn"

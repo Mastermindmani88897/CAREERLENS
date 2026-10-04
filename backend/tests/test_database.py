@@ -156,9 +156,17 @@ def test_alembic_infrastructure_configuration():
 
 
 @pytest.mark.asyncio
-async def test_phase4_boundary_no_later_phase_models():
-    """Verify that later phase tables (opportunities, matches, etc.) do NOT exist yet."""
-    later_phase_tables = {
+async def test_database_all_approved_models_exist():
+    """Verify that all approved Phase 4 and Phase 6 tables exist in the database."""
+    approved_tables = {
+        "users",
+        "candidate_profiles",
+        "resumes",
+        "skills",
+        "educations",
+        "experiences",
+        "projects",
+        "certifications",
         "opportunities",
         "opportunity_skills",
         "matches",
@@ -171,5 +179,6 @@ async def test_phase4_boundary_no_later_phase_models():
             text("SELECT tablename FROM pg_tables WHERE schemaname = 'public';")
         )
         existing_tables = {row[0] for row in result.fetchall()}
-        intersection = later_phase_tables.intersection(existing_tables)
-        assert not intersection, f"Later phase tables exist prematurely: {intersection}"
+        assert approved_tables.issubset(existing_tables), (
+            f"Missing approved tables: {approved_tables - existing_tables}"
+        )

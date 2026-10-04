@@ -1,6 +1,6 @@
 """
 CareerLens ORM models package.
-Exports all approved Phase 4 core entities and enums.
+Exports all approved Phase 4 and Phase 6 core entities and enums.
 """
 
 from app.models.candidate import (
@@ -13,17 +13,27 @@ from app.models.candidate import (
     Skill,
 )
 from app.models.enums import (
+    ApplicationStatus,
     EducationLevel,
+    EligibilityStatus,
     EmploymentType,
+    OpportunitySource,
     SkillCategory,
     SkillProficiency,
     SkillSource,
     WorkMode,
 )
+from app.models.opportunity import Opportunity, OpportunitySkill
+from app.models.tracking import (
+    Application,
+    ApplicationStatusHistory,
+    InterviewPrep,
+    Match,
+)
 from app.models.user import User
 
 __all__ = [
-    # Entities
+    # Entities (Phase 4: Candidate & Identity)
     "User",
     "CandidateProfile",
     "Resume",
@@ -32,6 +42,13 @@ __all__ = [
     "Experience",
     "Project",
     "Certification",
+    # Entities (Phase 6: Opportunity & Tracking)
+    "Opportunity",
+    "OpportunitySkill",
+    "Match",
+    "Application",
+    "ApplicationStatusHistory",
+    "InterviewPrep",
     # Enums
     "WorkMode",
     "EmploymentType",
@@ -39,4 +56,7 @@ __all__ = [
     "SkillProficiency",
     "SkillSource",
     "EducationLevel",
+    "OpportunitySource",
+    "EligibilityStatus",
+    "ApplicationStatus",
 ]

@@ -10,13 +10,38 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### Planned
-- Phase 6: Opportunity and tracking data models
 - Phase 7: React + Vite frontend scaffold
 - Phase 8: Security and dev tooling configuration
 - Phase 9: Testing foundation
 - Phase 10: 30% milestone documentation and commit
 
 ---
+
+## [0.5.0] — 2026-10-04
+
+### Added
+- Opportunity & Tracking ORM entities according to approved v1.1 ER design (`backend/app/models/`):
+  - `Opportunity`: Job listing entity with compensation, work mode, employment type, location, required/preferred skill arrays, and vector column `job_embedding (VECTOR(384))`
+  - `OpportunitySkill`: Normalized skill mappings for opportunities with `is_required` flag and unique constraint `(opportunity_id, skill_name)`
+  - `Match`: Match scoring entity linking `CandidateProfile` and `Opportunity` with semantic/deterministic/final scores, JSONB breakdowns, and unique pair constraint
+  - `Application`: Job application tracking record with `ApplicationStatus` enum, applied date, and unique candidate/opportunity constraint
+  - `ApplicationStatusHistory`: Immutable audit trail for application status transitions
+  - `InterviewPrep`: Tailored interview preparation content with structured JSONB and unique candidate/opportunity constraint
+- Native PostgreSQL ENUM definitions: `opportunity_source_enum`, `eligibility_status_enum`, `application_status_enum`
+- Relational and partial indexes: `opportunities_source_dedup_idx` (partial unique where source_id IS NOT NULL), `opportunities_active_idx`, `opportunities_employment_type_idx`, `opportunities_work_mode_idx`, `opp_skills_opp_id_idx`, `opp_skills_name_idx`, `matches_profile_score_idx`, `applications_profile_status_idx`, and `status_history_app_id_idx`
+- Alembic database migrations:
+  - Migration 0003 (`b4f81c9a1d2e`): Creates `opportunities`, `opportunity_skills`, `opportunity_source_enum`, and relational indexes
+  - Migration 0004 (`c7e23d4f5a6b`): Creates `matches`, `applications`, `application_status_history`, `interview_prep`, `eligibility_status_enum`, and `application_status_enum`
+- Applied both migrations cleanly to `careerlens_db` and `careerlens_test` with verified downgrade/re-upgrade rollback cycle
+- Comprehensive automated test suite in `backend/tests/test_opportunity_models.py` (13 tests) validating model inheritance, metadata integrity, primary/foreign keys, unique constraints, enum definitions, CRUD operations, cascade deletion lifecycles, and partial index deduplication
+
+### Security
+- Verified strict cascade deletions (`ON DELETE CASCADE`) preventing orphaned sub-entities across all relational links
+- Verified no credentials, tokens, or production database connection strings committed
+- Static security analysis via Bandit passing with zero issues across application code, migration scripts, and test suites
+
+---
+
 
 ## [0.4.0] — 2026-10-04
 

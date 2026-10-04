@@ -33,6 +33,7 @@ from app.models.enums import (
 )
 
 if TYPE_CHECKING:
+    from app.models.tracking import Application, InterviewPrep, Match
     from app.models.user import User
 
 
@@ -178,8 +179,24 @@ class CandidateProfile(Base):
         back_populates="candidate_profile",
         cascade="all, delete-orphan",
     )
+    matches: Mapped[list["Match"]] = relationship(
+        "Match",
+        back_populates="candidate_profile",
+        cascade="all, delete-orphan",
+    )
+    applications: Mapped[list["Application"]] = relationship(
+        "Application",
+        back_populates="candidate_profile",
+        cascade="all, delete-orphan",
+    )
+    interview_preps: Mapped[list["InterviewPrep"]] = relationship(
+        "InterviewPrep",
+        back_populates="candidate_profile",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
+
         return f"<CandidateProfile id={self.id} full_name={self.full_name}>"
 
 
