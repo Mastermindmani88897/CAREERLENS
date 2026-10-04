@@ -10,7 +10,6 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### Planned
-- Phase 5: Authentication module (JWT, bcrypt)
 - Phase 6: Opportunity and tracking data models
 - Phase 7: React + Vite frontend scaffold
 - Phase 8: Security and dev tooling configuration
@@ -18,6 +17,34 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Phase 10: 30% milestone documentation and commit
 
 ---
+
+## [0.4.0] — 2026-10-04
+
+### Added
+- Core authentication module (`backend/app/api/v1/endpoints/auth.py`):
+  - `POST /api/v1/auth/register`: Safe user registration with input validation, duplicate email conflict handling (HTTP 409), password hashing via bcrypt, and safe profile response.
+  - `POST /api/v1/auth/login`: User login validating credentials against stored bcrypt hash, issuing signed Bearer JWT access tokens (HTTP 200).
+  - `GET /api/v1/auth/me`: Protected current-user identity endpoint validating Bearer JWT and returning safe user profile.
+- Security and cryptographic utilities (`backend/app/core/security.py`):
+  - Bcrypt password hashing (`hash_password`, `verify_password`) with per-user salt generation.
+  - Password policy validation enforcing minimum 8 characters, maximum 72 bytes (preventing silent bcrypt truncation), and non-blank input.
+  - JWT token generation (`create_access_token`) and validation (`decode_access_token`) with standard claims (`sub`, `exp`, `iat`, `type="access"`).
+- Dependency injection (`backend/app/api/deps.py`):
+  - `get_current_user` and `get_current_active_user` FastAPI dependencies validating Bearer JWT, checking expiration/claims, and retrieving active User from database.
+- Pydantic schemas (`backend/app/schemas/auth.py`):
+  - `UserRegisterRequest`, `UserLoginRequest`, `Token`, `UserResponse` with strict exclusion of sensitive fields (`hashed_password`).
+- Authentication test suite (`backend/tests/test_auth.py`):
+  - 25 dedicated test cases covering password policy, hashing, JWT lifecycle, expiration, signature verification, duplicate registration, credential validation, protected endpoints, and OpenAPI schema compliance.
+
+### Security
+- Password hashes generated exclusively with bcrypt and random salt; plaintext passwords never logged or stored.
+- Sensitive fields (`hashed_password`) strictly excluded from all API response schemas.
+- JWT secret key loaded dynamically from environment (`JWT_SECRET_KEY`); no hardcoded cryptographic secrets.
+- Constant error responses on invalid credentials preventing email enumeration.
+- Automated security scan via Bandit passing with zero issues across application code and dependencies.
+
+---
+
 
 ## [0.3.0] — 2026-10-04
 

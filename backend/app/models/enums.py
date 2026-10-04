@@ -3,10 +3,10 @@ Database enumerations for CareerLens data models.
 Matches approved v1.1 ER design PostgreSQL native ENUM types.
 """
 
-from enum import Enum
+from enum import StrEnum
 
 
-class WorkMode(str, Enum):
+class WorkMode(StrEnum):
     """Work mode preferences and requirements."""
 
     REMOTE = "remote"
@@ -15,7 +15,7 @@ class WorkMode(str, Enum):
     ANY = "any"
 
 
-class EmploymentType(str, Enum):
+class EmploymentType(StrEnum):
     """Employment type preferences and requirements."""
 
     FULLTIME = "fulltime"
@@ -25,7 +25,7 @@ class EmploymentType(str, Enum):
     ANY = "any"
 
 
-class SkillCategory(str, Enum):
+class SkillCategory(StrEnum):
     """Category classification for candidate and opportunity skills."""
 
     TECHNICAL = "technical"
@@ -35,7 +35,7 @@ class SkillCategory(str, Enum):
     DOMAIN = "domain"
 
 
-class SkillProficiency(str, Enum):
+class SkillProficiency(StrEnum):
     """Proficiency level for candidate skills."""
 
     BEGINNER = "beginner"
@@ -44,14 +44,14 @@ class SkillProficiency(str, Enum):
     EXPERT = "expert"
 
 
-class SkillSource(str, Enum):
+class SkillSource(StrEnum):
     """Source origin of candidate skill."""
 
     RESUME = "resume"
     MANUAL = "manual"
 
 
-class EducationLevel(str, Enum):
+class EducationLevel(StrEnum):
     """Education attainment level for eligibility evaluation."""
 
     NONE = "none"

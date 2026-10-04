@@ -3,9 +3,9 @@ User authentication and identity ORM model.
 Matches approved v1.1 ER design Entity 1.
 """
 
+import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
-import uuid
 
 from sqlalchemy import Boolean, DateTime, String, func
 from sqlalchemy.dialects.postgresql import UUID

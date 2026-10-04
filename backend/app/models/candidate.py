@@ -3,9 +3,9 @@ Candidate profile and related sub-entities ORM models.
 Matches approved v1.1 ER design Entities 2 through 8.
 """
 
+import uuid
 from datetime import date, datetime
 from typing import TYPE_CHECKING, Any
-import uuid
 
 from sqlalchemy import (
     Boolean,
