@@ -10,13 +10,35 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### Planned
-- Phase 4: Core data models and Alembic migrations
 - Phase 5: Authentication module (JWT, bcrypt)
 - Phase 6: Opportunity and tracking data models
 - Phase 7: React + Vite frontend scaffold
 - Phase 8: Security and dev tooling configuration
 - Phase 9: Testing foundation
 - Phase 10: 30% milestone documentation and commit
+
+---
+
+## [0.3.0] — 2026-10-04
+
+### Added
+- Core candidate and identity ORM entities according to approved v1.1 ER design (`backend/app/models/`):
+  - `User`: Identity entity with email uniqueness, password hash, and active/admin flags
+  - `CandidateProfile`: Central candidate profile with work/employment preferences, location, compensation, and social links
+  - `Resume`: Resume metadata, raw text extraction, and structured JSONB payload
+  - `Skill`: Normalized candidate skills with category, proficiency level, and composite unique constraint `(candidate_profile_id, skill_name)`
+  - `Education`: Education history with degree, institution, field of study, and education level enum
+  - `Experience`: Professional experience with employment type, work mode, and PostgreSQL string array `skills_used`
+  - `Project`: Personal/academic projects with live URL, repo link, and PostgreSQL string array `technologies`
+  - `Certification`: Professional certifications with issuing organization, validity dates, and verification links
+- PostgreSQL native ENUM definitions: `work_mode_enum`, `employment_type_enum`, `skill_category_enum`, `skill_proficiency_enum`, `skill_source_enum`, `education_level_enum`
+- Alembic revision `0a859f9b9f2c` (`create_core_candidate_models`) generated and applied to `careerlens_db` and `careerlens_test`
+- Automated test suite in `backend/tests/test_models.py` verifying model inheritance, metadata integrity, primary/foreign keys, unique constraints, relationship persistence, cascade deletion lifecycle, and constraint violation guards
+
+### Security
+- Zero credentials, secrets, or tokens committed in migration scripts, models, or configurations
+- Proper ON DELETE CASCADE foreign key constraints preventing orphaned candidate sub-entity records
+- Static security analysis via Bandit passing with zero issues across application code, migration scripts, and utilities
 
 ---
 
