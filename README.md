@@ -22,41 +22,43 @@ The system uses a **hybrid matching engine** combining semantic vector similarit
 
 ## Project Status
 
-> 🧪 **Phase 9 Completed** — Testing Foundation Established
+> 🏆 **30% Foundation Milestone Completed** (Phases 1–10)
+>
+> All foundational infrastructure, data models, authentication, frontend scaffold, security hardening, and testing foundations are verified and frozen.
+> Scheduled Next: **Phase 11 — Resume Parsing Pipeline** (NOT started).
 
 ---
 
-## Technology Stack
+## Phase Status Summary
 
-| Layer | Technology |
-|---|---|
-| Backend | Python 3.12, FastAPI, SQLAlchemy 2.x (async), Alembic, Ruff, Bandit, Pytest |
-| Database | PostgreSQL 18.6, pgvector |
-| AI / ML | sentence-transformers (`all-MiniLM-L6-v2`), pgvector HNSW |
-| LLM | Configurable (Gemini / OpenAI / None — fallback templates) |
-| Frontend | React 19, Vite, Tailwind CSS v4, Lucide React, Oxlint, Vitest |
-
----
-
-## Repository Structure
-
-```
-CAREERLENS/
-├── backend/          # FastAPI application, models, security core
-├── frontend/         # React application, UI components, tests
-├── data/
-│   ├── sample/       # Development synthetic dataset (not production data)
-│   └── uploads/      # Resume file uploads (gitignored)
-├── docs/             # Architecture, development, and security documentation
-├── tests/            # Project-level test utilities
-├── scripts/          # CLI scripts (quality check, db setup, etc.)
-├── .env.example      # Environment variable template (placeholders only)
-└── README.md
-```
+| Phase | Description | Status |
+|---|---|---|
+| **Phase 1** | Repository Setup & Project Scaffold | ✅ **COMPLETE** |
+| **Phase 2** | Backend Scaffold & FastAPI Health Core | ✅ **COMPLETE** |
+| **Phase 3** | PostgreSQL 18.6 + pgvector 0.8.6 Foundation | ✅ **COMPLETE** |
+| **Phase 4** | Core Candidate & Identity Data Models | ✅ **COMPLETE** |
+| **Phase 5** | Authentication Module & JWT Infrastructure | ✅ **COMPLETE** |
+| **Phase 6** | Opportunity & Application Tracking Models | ✅ **COMPLETE** |
+| **Phase 7** | React 19 + TypeScript + Vite Frontend Scaffold | ✅ **COMPLETE** |
+| **Phase 8** | Security & Tooling Hardening (Bandit, Oxlint) | ✅ **COMPLETE** |
+| **Phase 9** | Testing Foundation (Fixtures, Factories, Safety) | ✅ **COMPLETE** |
+| **Phase 10** | 30% Foundation Milestone Verification & Checkpoint | ✅ **COMPLETE** |
+| **Phase 11** | Resume Parsing & Extraction Pipeline | ⏳ **SCHEDULED NEXT** |
 
 ---
 
-## Setup & Development
+## Current Architecture & Scope Boundaries
+
+CareerLens is implemented as a **Modular Monolith** (see [`docs/architecture.md`](docs/architecture.md) and [`docs/roadmap.md`](docs/roadmap.md)):
+
+- **Backend**: Python 3.12, FastAPI, SQLAlchemy 2.0 (asyncio), Alembic (`c7e23d4f5a6b`)
+- **Database**: PostgreSQL 18.6 with pgvector 0.8.6 (`careerlens_db`, `careerlens_test`)
+- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS v4, Lucide React
+- **Testing**: Pytest (94 tests), Vitest (23 tests), Testing Library, deterministic factories
+- **Security**: Ruff, Bandit, Oxlint, npm audit, response headers, log redaction, error masking
+
+> [!NOTE]
+> **Foundation Boundary Notice**: The current milestone covers structural foundation only. Resume parsing, vector embedding pipelines, hybrid recommendation engines, job scrapers, and external LLM APIs belong to subsequent phases (Phases 11+) and are not yet implemented.
 
 ### Prerequisites
 

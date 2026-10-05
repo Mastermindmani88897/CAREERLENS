@@ -10,7 +10,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### Planned
-- Phase 10: 30% milestone documentation and commit
+- Phase 11: Resume parsing and information extraction pipeline
+
+---
+
+## [0.9.0] — 2026-10-05
+
+### Added
+- **30% Foundation Milestone Completed & Verified** (Phases 1–10):
+  - Completed comprehensive repository, backend, database, frontend, security, and testing foundation audits.
+  - Published [`docs/roadmap.md`](docs/roadmap.md) defining the v1.1 roadmap, phase status matrix, and scope boundaries.
+  - Published [`docs/architecture.md`](docs/architecture.md) detailing the Modular Monolith architecture across backend, PostgreSQL 18.6 + pgvector, React 19, security pipelines, and testing foundations.
+  - Formally verified zero regressions across 94 backend tests (pytest) and 23 frontend tests (vitest).
+  - Verified static security scans with zero vulnerabilities (Bandit, npm audit, secret scanner).
+  - Verified clean database schema state across `careerlens_db` and `careerlens_test` at Alembic head revision `c7e23d4f5a6b` with 15 relational tables and native pgvector extension.
+  - Confirmed strict boundary preservation: Phase 11 (Resume Parsing) and subsequent AI/ML features remain untouched and scheduled next.
 
 ---
 
