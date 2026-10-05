@@ -30,16 +30,53 @@ source backend/.venv/bin/activate
 
 ### Running Backend Tests (Pytest)
 
-Run all unit, integration, and security regression tests:
+Run all unit, integration, factory, and security regression tests:
 ```powershell
 cd backend
 pytest
 ```
 
-Run a specific test module:
+Run with verbose test execution details:
 ```powershell
-pytest tests/test_security_hardening.py
+pytest -v
 ```
+
+Run a specific test category or module:
+```powershell
+pytest tests/test_factories.py -v
+pytest tests/test_isolation.py -v
+pytest tests/test_integration_foundation.py -v
+pytest tests/test_security_hardening.py -v
+```
+
+### Testing Foundation & Safety Architecture
+
+1. **Test Database Safety Guard**:
+   - Automated tests run strictly against `careerlens_test`.
+   - `conftest.py` contains an autouse safety fixture (`enforce_test_database_safety`) that aborts execution if `careerlens_db` or a non-test database URL is configured.
+   - `settings.effective_database_url` switches dynamically to `TEST_DATABASE_URL` when `ENVIRONMENT == "test"`.
+
+2. **Database Isolation & Session Rollback**:
+   - `db_session` fixture uses a dedicated async session wrapped in nested transaction rollbacks to prevent state leakage between tests.
+   - Test data created during tests is rolled back automatically unless committed.
+
+3. **Deterministic Test Data Factories (`backend/tests/factories`)**:
+   - Built with generic typed `BaseFactory[T]` supporting in-memory `.build(**overrides)` and persistent `await .create(db_session, **overrides)`.
+   - Available factories covering all 14 core & tracking models:
+     - `UserFactory`
+     - `CandidateProfileFactory`, `ResumeFactory`, `SkillFactory`, `EducationFactory`, `ExperienceFactory`, `ProjectFactory`, `CertificationFactory`
+     - `OpportunityFactory`, `OpportunitySkillFactory`
+     - `MatchFactory`, `ApplicationFactory`, `ApplicationStatusHistoryFactory`, `InterviewPrepFactory`
+
+4. **Authentication Test Helpers (`backend/tests/helpers/auth.py`)**:
+   - `create_test_user(db_session, ...)`: Creates persistent test user with hashed password.
+   - `create_auth_token(user, ...)`: Generates valid JWT bearer token.
+   - `get_auth_headers(token)`: Formats standard `{"Authorization": f"Bearer {token}"}` dictionary.
+   - `login_test_user(client, email, password)`: Exercises the real `/api/v1/auth/login` endpoint.
+   - Reusable fixtures: `authenticated_user`, `auth_headers`, `authenticated_client`.
+
+5. **Async Integration Client**:
+   - `async_client`: `httpx.AsyncClient` configured with ASGI transport over FastAPI `app`.
 
 ### Code Formatting & Linting (Ruff)
 
@@ -133,6 +170,12 @@ Execute Vitest component, routing, and security tests:
 cd frontend
 npm test
 ```
+
+### Shared Frontend Test Utilities (`frontend/src/test/test-utils.tsx`)
+
+- `renderWithRouter(ui, { initialEntries = ['/'], routerOptions = {} })`: Wraps components and pages in a configured `MemoryRouter` for isolated routing and link navigation testing.
+- `createMockFrontendUser(overrides)`: Deterministic user factory for frontend components.
+- Direct re-exports of Testing Library utilities (`screen`, `waitFor`, `act`, `fireEvent`, `within`, `cleanup`, `userEvent`).
 
 ### Dependency Security Audit (npm audit)
 

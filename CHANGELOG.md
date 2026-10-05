@@ -10,8 +10,41 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### Planned
-- Phase 9: Testing foundation
 - Phase 10: 30% milestone documentation and commit
+
+---
+
+## [0.8.0] — 2026-10-05
+
+### Added
+- **Centralized Test Configuration & Database Safety** (`backend/tests/conftest.py`, `backend/app/core/config.py`):
+  - `enforce_test_database_safety` autouse fixture strictly preventing test runs against production or development database (`careerlens_db`); forces immediate abortion if non-test DB is targeted.
+  - `settings.effective_database_url` dynamically switches to `TEST_DATABASE_URL` (`careerlens_test`) during `ENVIRONMENT == "test"`.
+  - Transaction-level test isolation via `db_session` fixture with automatic nested rollbacks.
+  - Async ASGI test client fixture (`async_client`) using `httpx.AsyncClient`.
+  - Authenticated test fixtures: `authenticated_user`, `auth_headers`, `authenticated_client`, `sample_candidate_profile`, `sample_opportunity`.
+- **Deterministic Test Data Factories** (`backend/tests/factories/`):
+  - Generic typed `BaseFactory[T]` supporting in-memory `.build(**overrides)` and persistent async `.create(db_session, **overrides)`.
+  - Factories for all 14 core, candidate, opportunity, and tracking entities:
+    - `UserFactory` (`backend/tests/factories/user_factory.py`)
+    - `CandidateProfileFactory`, `ResumeFactory`, `SkillFactory`, `EducationFactory`, `ExperienceFactory`, `ProjectFactory`, `CertificationFactory` (`backend/tests/factories/candidate_factory.py`)
+    - `OpportunityFactory`, `OpportunitySkillFactory` (`backend/tests/factories/opportunity_factory.py`)
+    - `MatchFactory`, `ApplicationFactory`, `ApplicationStatusHistoryFactory`, `InterviewPrepFactory` (`backend/tests/factories/tracking_factory.py`)
+- **Authentication Test Helpers** (`backend/tests/helpers/auth.py`):
+  - `create_test_user`, `create_auth_token`, `get_auth_headers`, `create_authenticated_headers`, `login_test_user` for testing real authentication flows.
+- **Backend Testing Foundation Test Suites**:
+  - `backend/tests/test_factories.py` (7 tests): Validates in-memory build and database persistence across all 14 factories.
+  - `backend/tests/test_isolation.py` (3 tests): Validates database safety abort mechanism, test environment URL routing, and session rollback isolation.
+  - `backend/tests/test_integration_foundation.py` (5 tests): Validates async client, authenticated client fixture, login flow helper, and sample model fixtures.
+- **Frontend Test Foundation** (`frontend/src/test/`):
+  - `frontend/src/test/test-utils.tsx`: Shared test utilities providing `renderWithRouter` (wrapping components in configured `MemoryRouter`), `createMockFrontendUser` mock factory, and re-exported Testing Library utilities.
+  - `frontend/src/test/TestUtils.test.tsx` (2 tests): Verifies router-isolated component rendering and mock data defaults.
+- **Documentation**:
+  - Updated `docs/development.md` with backend testing foundation, test database safety guard, factory usage, authentication test helpers, and frontend test utilities.
+
+### Security
+- Verified zero credentials or real user data in test fixtures and factories.
+- Hardened database safety guard preventing accidental data pollution or destructive operations on development or production databases.
 
 ---
 

@@ -48,7 +48,7 @@ All HTTP responses automatically include standard defensive headers:
 - Automatically redacts:
   - User passwords and raw credential arguments (`password='***'`)
   - Authorization headers and bearer tokens (`[REDACTED_TOKEN]`)
-  - Database connection strings with embedded passwords (`postgresql://user:***@host:port/db`)
+  - Database connection strings with embedded passwords (passwords masked in connection URLs)
   - API keys and JWT secret values
 
 ---
