@@ -10,10 +10,54 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### Planned
-- Phase 7: React + Vite frontend scaffold
-- Phase 8: Security and dev tooling configuration
 - Phase 9: Testing foundation
 - Phase 10: 30% milestone documentation and commit
+
+---
+
+## [0.7.0] — 2026-10-05
+
+### Added
+- **Unified Quality Gate Script** (`scripts/check_quality.py`):
+  - Standardized runner for secret scans, Ruff lint & format checks, Bandit static analysis, backend pytest suite, frontend Oxlint, TypeScript type-check, Vitest, and production Vite build.
+- **Centralized Logging Security & Redaction Foundation** (`backend/app/core/logging.py`):
+  - `SensitiveDataFilter`: Intercepts log records to redact plaintext user passwords, Bearer tokens, Basic credentials, database connection URIs with embedded passwords, and authorization headers.
+  - `setup_logging` and `get_logger`: Centralized application logging initialization under the `careerlens` namespace.
+- **Security Response Headers Middleware** (`backend/app/main.py`):
+  - Injects `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection: 1; mode=block`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`, and production `Strict-Transport-Security`.
+- **Unhandled Server Exception Masking** (`backend/app/main.py`):
+  - Catches unhandled exceptions, logs sanitized error details server-side, and emits generic `{"detail": "Internal server error"}` with HTTP 500 without leaking stack traces or internal filesystem paths.
+- **Production Configuration Safeguards** (`backend/app/core/config.py`):
+  - Enforces `DEBUG=False`, strong JWT secret (>= 32 chars), non-placeholder `DATABASE_URL`, and rejection of wildcard CORS origin in production environments.
+  - Automatically parses comma-separated origin strings from `ALLOWED_ORIGINS` and strips trailing slashes.
+- **Security-Focused Test Suites**:
+  - `backend/tests/test_security_hardening.py` (15 tests): Validates security headers, CORS baseline, logging redaction, unhandled error masking, production settings validation, and `.env.example` placeholder hygiene.
+  - `frontend/src/test/Security.test.tsx` (4 tests): Validates exclusion of server-only secrets from client bundle, password input obfuscation (`type="password"`), absence of `dangerouslySetInnerHTML`, and default token isolation.
+- **Pre-Commit Configuration** (`.pre-commit-config.yaml`):
+  - Lightweight git pre-commit configuration with file hygiene, private key detection, and Ruff formatting.
+- **Standardized Documentation**:
+  - `docs/development.md`: Comprehensive guide to backend, frontend, and quality gate commands.
+  - `docs/security_checklist.md`: Security policies for secret management, CORS baseline, security headers, logging, and error handling.
+
+### Changed
+- Hardened CORS configuration to explicit HTTP methods and allowed headers.
+- Enhanced database health check error handling in `backend/app/api/v1/endpoints/health.py` to avoid leaking database internals.
+- Strengthened `.gitignore` rules across root and frontend for certificates (`*.pem`, `*.key`), database dumps, and environment variants.
+
+---
+
+## [0.6.0] — 2026-10-04
+
+### Added
+- React 19 + TypeScript + Vite modern frontend scaffold (`frontend/`):
+  - Application shell and responsive navigation bar with CareerLens branding
+  - Responsive landing page with Hero section, value propositions, and Call-to-Action routing
+  - Authentication views (`LoginPage`, `RegisterPage`) with password policy indicators
+  - Dashboard overview with match metric placeholders and application tracking cards
+  - Dedicated 404 Not Found error page
+- Core UI component library (`frontend/src/components/ui/`): Button, Card, Badge, Input, LoadingState
+- Comprehensive frontend test suite using Vitest and React Testing Library (17 tests)
+- Oxlint linting, TypeScript type-check, and Vite production bundle build verification
 
 ---
 

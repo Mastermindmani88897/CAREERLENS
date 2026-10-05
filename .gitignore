@@ -9,6 +9,17 @@
 .env.local
 .env.*.local
 *.env
+.env.test
+.env.production
+.env.staging
+
+# Certificates and private keys
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
 
 # -----------------------------------------------------------------------------
 # PYTHON
@@ -84,6 +95,8 @@ frontend/.env.*.local
 *.db
 *.sqlite
 *.sqlite3
+*.dump
+*.sql.gz
 
 # -----------------------------------------------------------------------------
 # FILE UPLOADS — NEVER COMMIT UPLOADED FILES

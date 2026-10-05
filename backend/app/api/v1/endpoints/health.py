@@ -2,9 +2,11 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
 from app.core.config import settings
+from app.core.logging import get_logger
 from app.db.session import check_db_health
 
 router = APIRouter()
+logger = get_logger("health")
 
 
 class HealthResponse(BaseModel):
@@ -52,7 +54,8 @@ async def db_health_check() -> DatabaseHealthResponse:
             pgvector_operational=health_data["pgvector_operational"],
         )
     except Exception as exc:
+        logger.error("Database health check failed: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Database health check failed: {exc}",
-        ) from exc
+            detail="Database health check failed: service unavailable",
+        ) from None
