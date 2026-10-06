@@ -22,10 +22,10 @@ The system uses a **hybrid matching engine** combining semantic vector similarit
 
 ## Project Status
 
-> 🏆 **Phases 1–12 Completed**
+> 🏆 **Phases 1–13 Completed**
 >
-> All foundational infrastructure, data models, authentication, frontend scaffold, security hardening, testing foundations, resume extraction pipeline, and candidate profile API with resume synchronization are verified and complete.
-> Scheduled Next: **Phase 13 — Candidate Profile Frontend** (NOT started).
+> All foundational infrastructure, data models, authentication, frontend scaffold, security hardening, testing foundations, resume extraction pipeline, candidate profile API with resume synchronization, and the candidate profile frontend interface are verified and complete.
+> Scheduled Next: **Phase 14 — Job Ingestion Pipeline** (NOT started).
 
 ---
 
@@ -45,7 +45,8 @@ The system uses a **hybrid matching engine** combining semantic vector similarit
 | **Phase 10** | 30% Foundation Milestone Verification & Checkpoint | ✅ **COMPLETE** |
 | **Phase 11** | Resume Parsing & Extraction Pipeline | ✅ **COMPLETE** |
 | **Phase 12** | Candidate Profile API & Resume Synchronization | ✅ **COMPLETE** |
-| **Phase 13** | Candidate Profile Frontend | ⏳ **SCHEDULED NEXT** |
+| **Phase 13** | Candidate Profile Frontend | ✅ **COMPLETE** |
+| **Phase 14** | Job Ingestion Pipeline | ⏳ **SCHEDULED NEXT** |
 
 ---
 

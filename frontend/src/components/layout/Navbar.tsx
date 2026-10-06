@@ -12,6 +12,7 @@ export function Navbar() {
     { to: '/', label: 'Home' },
     { to: '/dashboard', label: 'Dashboard' },
     { to: '/resume', label: 'Resume' },
+    { to: '/profile', label: 'Profile' },
   ]
 
   const closeMobileMenu = () => setMobileMenuOpen(false)

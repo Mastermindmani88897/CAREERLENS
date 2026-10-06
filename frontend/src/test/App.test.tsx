@@ -98,6 +98,21 @@ describe('CareerLens Application Shell & Routing', () => {
     ).toBeInTheDocument()
   })
 
+  it('navigates to profile page via navigation link', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    const profileLinks = screen.getAllByRole('link', {
+      name: /Profile/i,
+    })
+    expect(profileLinks.length).toBeGreaterThan(0)
+    await user.click(profileLinks[0])
+
+    expect(
+      await screen.findByTestId(/(profile-loading|profile-error|candidate-profile-page)/)
+    ).toBeInTheDocument()
+  })
+
   it('never displays sensitive credentials or server secrets in rendered UI', () => {
     const { container } = render(<App />)
     const html = container.innerHTML
