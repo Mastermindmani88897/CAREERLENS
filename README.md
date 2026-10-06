@@ -22,10 +22,10 @@ The system uses a **hybrid matching engine** combining semantic vector similarit
 
 ## Project Status
 
-> 🏆 **30% Foundation Milestone Completed** (Phases 1–10)
+> 🏆 **Phases 1–12 Completed**
 >
-> All foundational infrastructure, data models, authentication, frontend scaffold, security hardening, and testing foundations are verified and frozen.
-> Scheduled Next: **Phase 11 — Resume Parsing Pipeline** (NOT started).
+> All foundational infrastructure, data models, authentication, frontend scaffold, security hardening, testing foundations, resume extraction pipeline, and candidate profile API with resume synchronization are verified and complete.
+> Scheduled Next: **Phase 13 — Candidate Profile Frontend** (NOT started).
 
 ---
 
@@ -44,7 +44,8 @@ The system uses a **hybrid matching engine** combining semantic vector similarit
 | **Phase 9** | Testing Foundation (Fixtures, Factories, Safety) | ✅ **COMPLETE** |
 | **Phase 10** | 30% Foundation Milestone Verification & Checkpoint | ✅ **COMPLETE** |
 | **Phase 11** | Resume Parsing & Extraction Pipeline | ✅ **COMPLETE** |
-| **Phase 12** | Skill Taxonomy Normalization & Extraction | ⏳ **SCHEDULED NEXT** |
+| **Phase 12** | Candidate Profile API & Resume Synchronization | ✅ **COMPLETE** |
+| **Phase 13** | Candidate Profile Frontend | ⏳ **SCHEDULED NEXT** |
 
 ---
 
@@ -104,6 +105,7 @@ See `.env.example` for all required and optional variables.
 | `docs/development.md` | Local development setup guide |
 | `docs/security_checklist.md` | Pre-commit and pre-push security checklist |
 | `docs/resume_pipeline.md` | Phase 11 Resume ingestion & deterministic extraction pipeline |
+| `docs/candidate_profile.md` | Phase 12 Candidate Profile API & resume synchronization specification |
 
 ---
 
