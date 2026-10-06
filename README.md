@@ -43,7 +43,8 @@ The system uses a **hybrid matching engine** combining semantic vector similarit
 | **Phase 8** | Security & Tooling Hardening (Bandit, Oxlint) | ✅ **COMPLETE** |
 | **Phase 9** | Testing Foundation (Fixtures, Factories, Safety) | ✅ **COMPLETE** |
 | **Phase 10** | 30% Foundation Milestone Verification & Checkpoint | ✅ **COMPLETE** |
-| **Phase 11** | Resume Parsing & Extraction Pipeline | ⏳ **SCHEDULED NEXT** |
+| **Phase 11** | Resume Parsing & Extraction Pipeline | ✅ **COMPLETE** |
+| **Phase 12** | Skill Taxonomy Normalization & Extraction | ⏳ **SCHEDULED NEXT** |
 
 ---
 
@@ -102,6 +103,7 @@ See `.env.example` for all required and optional variables.
 | `docs/api.md` | API endpoint reference |
 | `docs/development.md` | Local development setup guide |
 | `docs/security_checklist.md` | Pre-commit and pre-push security checklist |
+| `docs/resume_pipeline.md` | Phase 11 Resume ingestion & deterministic extraction pipeline |
 
 ---
 

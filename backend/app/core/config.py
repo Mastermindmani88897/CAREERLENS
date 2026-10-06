@@ -40,10 +40,14 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
+    # Resume Upload & Processing (Phase 11)
+    RESUME_UPLOAD_DIR: str = "./data/uploads/resumes"
+    MAX_RESUME_SIZE_MB: int = 10
+
     @model_validator(mode="before")
     @classmethod
-    def assemble_cors_origins(cls, data: Any) -> Any:
-        """Allow ALLOWED_ORIGINS alias and parse comma-separated origin strings."""
+    def assemble_settings_aliases(cls, data: Any) -> Any:
+        """Allow environment variable aliases and parse comma-separated origin strings."""
         if isinstance(data, dict):
             raw_origins = (
                 data.get("CORS_ORIGINS") if "CORS_ORIGINS" in data else data.get("ALLOWED_ORIGINS")
@@ -56,6 +60,8 @@ class Settings(BaseSettings):
                     data["CORS_ORIGINS"] = [
                         str(o).strip().rstrip("/") for o in raw_origins if str(o).strip()
                     ]
+            if "MAX_RESUME_FILE_SIZE_MB" in data and "MAX_RESUME_SIZE_MB" not in data:
+                data["MAX_RESUME_SIZE_MB"] = data["MAX_RESUME_FILE_SIZE_MB"]
         return data
 
     @field_validator("CORS_ORIGINS", mode="after")

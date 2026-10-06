@@ -52,8 +52,8 @@ CareerLens development is organized into three major milestone horizons:
 | **Phase 7** | Frontend Scaffold | **COMPLETE** | `0501a09` |
 | **Phase 8** | Security & Development Tooling Hardening | **COMPLETE** | `b7dc1b7` |
 | **Phase 9** | Testing Foundation | **COMPLETE** | `8d46829` |
-| **Phase 10** | 30% Foundation Milestone Verification & Checkpoint | **COMPLETE** | Pending commit |
-| **Phase 11** | Resume Parsing & Extraction Pipeline | **NOT STARTED** | Scheduled Next |
+| **Phase 10** | 30% Foundation Milestone Verification & Checkpoint | **COMPLETE** | `7adc7d5` |
+| **Phase 11** | Resume Parsing & Extraction Pipeline | **COMPLETE** | Phase 11 |
 | **Phase 12+** | Subsequent Core Intelligence Phases | **NOT STARTED** | Awaiting authorization |
 
 ---

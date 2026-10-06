@@ -7,6 +7,7 @@ import {
   FileText,
   Sparkles,
   TrendingUp,
+  Upload,
 } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
@@ -94,16 +95,18 @@ export function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Link to="/resume">
+            <Button size="sm">
+              <Upload className="mr-2 h-4 w-4" aria-hidden="true" />
+              Upload Resume
+            </Button>
+          </Link>
           <Link to="/">
             <Button variant="outline" size="sm">
               <Compass className="mr-2 h-4 w-4" aria-hidden="true" />
               Explore All
             </Button>
           </Link>
-          <Button size="sm">
-            <Sparkles className="mr-2 h-4 w-4" aria-hidden="true" />
-            Recalculate Matches
-          </Button>
         </div>
       </div>
 

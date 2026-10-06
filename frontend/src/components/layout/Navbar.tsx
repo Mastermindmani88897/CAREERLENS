@@ -11,6 +11,7 @@ export function Navbar() {
   const navLinks = [
     { to: '/', label: 'Home' },
     { to: '/dashboard', label: 'Dashboard' },
+    { to: '/resume', label: 'Resume' },
   ]
 
   const closeMobileMenu = () => setMobileMenuOpen(false)
