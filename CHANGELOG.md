@@ -10,9 +10,30 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### Planned
-- Phase 11: Resume parsing and information extraction pipeline
+- Phase 15: Hybrid matching engine (semantic vector similarity + deterministic eligibility)
 
 ---
+
+## [0.14.0] — 2026-10-08
+
+### Added
+- **Phase 14 — Opportunity Ingestion & Normalization Foundation**:
+  - Added PostgreSQL `opportunity_type_enum` with values `('job', 'internship', 'hackathon')` and column `opportunities.opportunity_type` via Alembic migration `d8e31a7f4b9c` with index `opportunities_type_idx`.
+  - Updated SQLAlchemy ORM models (`Opportunity`, `OpportunitySkill`, `OpportunityType`).
+  - Created strongly typed Pydantic v2 schemas in `app/schemas/opportunity.py` (`RawOpportunityRow`, `OpportunityCreate`, `OpportunityUpdate`, `OpportunityResponse`, `OpportunityDetailResponse`, `OpportunityListResponse`, `OpportunityIngestResult`).
+  - Implemented deterministic text, URL, salary, date, and enum normalization service in `app/services/opportunity_normalizer.py`.
+  - Implemented deterministic canonical skill normalization in `app/services/opportunity_skill_normalizer.py` reusing canonical catalog without ML/LLM models.
+  - Implemented robust opportunity ingestion and deduplication service in `app/services/opportunity_ingest_service.py` supporting primary (`source + source_id`) and fallback deduplication.
+  - Created opportunity REST API endpoints in `app/api/v1/endpoints/opportunities.py`:
+    - `POST /api/v1/opportunities/ingest` (multi-format CSV or JSON batch ingestion, authenticated)
+    - `GET /api/v1/opportunities/` (filtering by `opportunity_type`, `work_mode`, `employment_type`, with pagination)
+    - `GET /api/v1/opportunities/{id}` (single opportunity detail with associated skills)
+  - Created synthetic development dataset in `data/sample/opportunities_synthetic.csv` covering jobs, internships, hackathons, and edge cases.
+  - Added 32 automated tests across `test_opportunity_normalizer.py`, `test_opportunity_deduplication.py`, `test_opportunity_ingestion.py`, and `test_opportunity_api.py`.
+  - Verified 177 passing backend tests and 51 passing frontend tests with zero regressions.
+
+---
+
 
 ## [0.9.0] — 2026-10-05
 

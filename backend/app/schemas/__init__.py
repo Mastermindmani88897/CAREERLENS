@@ -22,6 +22,16 @@ from app.schemas.candidate_profile import (
     SkillCreate,
     SkillResponse,
 )
+from app.schemas.opportunity import (
+    OpportunityCreate,
+    OpportunityDetailResponse,
+    OpportunityIngestResult,
+    OpportunityListResponse,
+    OpportunityResponse,
+    OpportunitySkillResponse,
+    OpportunityUpdate,
+    RawOpportunityRow,
+)
 from app.schemas.resume import (
     ContactInfo,
     DetectedSections,
@@ -54,6 +64,13 @@ __all__ = [
     "ExtractedExperience",
     "ExtractedProject",
     "ExtractedSkill",
+    "OpportunityCreate",
+    "OpportunityDetailResponse",
+    "OpportunityIngestResult",
+    "OpportunityListResponse",
+    "OpportunityResponse",
+    "OpportunitySkillResponse",
+    "OpportunityUpdate",
     "ParsedResumeData",
     "ProfileCreate",
     "ProfileDetailResponse",
@@ -63,6 +80,7 @@ __all__ = [
     "ProjectCreate",
     "ProjectResponse",
     "ProjectUpdate",
+    "RawOpportunityRow",
     "ResumeDetailResponse",
     "ResumeListResponse",
     "ResumeResponse",

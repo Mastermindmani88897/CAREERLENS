@@ -62,6 +62,14 @@ class EducationLevel(StrEnum):
     ANY = "any"
 
 
+class OpportunityType(StrEnum):
+    """Opportunity classification type (Phase 14)."""
+
+    JOB = "job"
+    INTERNSHIP = "internship"
+    HACKATHON = "hackathon"
+
+
 class OpportunitySource(StrEnum):
     """Source origin of opportunity/job listing."""
 

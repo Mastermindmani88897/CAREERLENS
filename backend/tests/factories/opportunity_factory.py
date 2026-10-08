@@ -10,6 +10,7 @@ from app.models.enums import (
     EducationLevel,
     EmploymentType,
     OpportunitySource,
+    OpportunityType,
     WorkMode,
 )
 from app.models.opportunity import Opportunity, OpportunitySkill
@@ -25,6 +26,7 @@ class OpportunityFactory(BaseFactory[Opportunity]):
     def default_attributes(cls) -> dict[str, Any]:
         unique_suffix = uuid.uuid4().hex[:8]
         return {
+            "opportunity_type": OpportunityType.JOB,
             "title": f"Senior Software Engineer {unique_suffix}",
             "company": "Acme Technology Corp",
             "location_city": "San Francisco",

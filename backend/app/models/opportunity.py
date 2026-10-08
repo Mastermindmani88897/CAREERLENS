@@ -30,6 +30,7 @@ from app.models.enums import (
     EducationLevel,
     EmploymentType,
     OpportunitySource,
+    OpportunityType,
     WorkMode,
 )
 
@@ -56,6 +57,7 @@ class Opportunity(Base):
             postgresql_where=text("source_id IS NOT NULL"),
         ),
         Index("opportunities_active_idx", "is_active"),
+        Index("opportunities_type_idx", "opportunity_type"),
         Index("opportunities_employment_type_idx", "employment_type"),
         Index("opportunities_work_mode_idx", "work_mode"),
     )
@@ -64,6 +66,17 @@ class Opportunity(Base):
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
+    )
+    opportunity_type: Mapped[OpportunityType] = mapped_column(
+        Enum(
+            OpportunityType,
+            name="opportunity_type_enum",
+            values_callable=_enum_values,
+            create_type=False,
+        ),
+        nullable=False,
+        default=OpportunityType.JOB,
+        server_default="job",
     )
     title: Mapped[str] = mapped_column(
         String(255),

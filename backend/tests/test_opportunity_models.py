@@ -25,6 +25,7 @@ from app.models import (
     Opportunity,
     OpportunitySkill,
     OpportunitySource,
+    OpportunityType,
     User,
     WorkMode,
 )
@@ -87,7 +88,8 @@ def test_phase6_tables_primary_keys():
 
 
 def test_phase6_enums():
-    """Verify Phase 6 enum classes and their values."""
+    """Verify Phase 6 and Phase 14 enum classes and their values."""
+    assert [e.value for e in OpportunityType] == ["job", "internship", "hackathon"]
     assert [e.value for e in OpportunitySource] == ["synthetic", "manual", "api"]
     assert [e.value for e in EligibilityStatus] == ["eligible", "partial", "review_required"]
     assert [e.value for e in ApplicationStatus] == [
@@ -142,12 +144,55 @@ async def test_opportunity_crud_and_defaults():
         await session.refresh(opp)
 
         assert opp.id is not None
+        assert opp.opportunity_type == OpportunityType.JOB
         assert opp.title.startswith("Cloud Infrastructure")
         assert opp.required_skills == ["Python", "Docker", "Kubernetes"]
         assert len(opp.job_embedding) == 384
         assert opp.is_active is True
         assert opp.created_at is not None
         assert opp.updated_at is not None
+
+
+@pytest.mark.asyncio
+async def test_opportunity_types_representation():
+    """Verify Opportunity represents JOB, INTERNSHIP, and HACKATHON types."""
+    async with async_session_factory() as session:
+        # 1. Job
+        job = Opportunity(
+            opportunity_type=OpportunityType.JOB,
+            title=f"Backend Lead {uuid.uuid4().hex[:6]}",
+            company="Tech Corp",
+            description="Build scalable distributed backend systems.",
+            employment_type=EmploymentType.FULLTIME,
+            source=OpportunitySource.SYNTHETIC,
+        )
+        # 2. Internship
+        internship = Opportunity(
+            opportunity_type=OpportunityType.INTERNSHIP,
+            title=f"AI Research Intern {uuid.uuid4().hex[:6]}",
+            company="Research Labs",
+            description="Work on research experiments.",
+            employment_type=EmploymentType.INTERNSHIP,
+            source=OpportunitySource.SYNTHETIC,
+        )
+        # 3. Hackathon
+        hackathon = Opportunity(
+            opportunity_type=OpportunityType.HACKATHON,
+            title=f"Global Open Source Hackathon {uuid.uuid4().hex[:6]}",
+            company="Open Foundation",
+            description="48-hour competitive software hackathon.",
+            employment_type=EmploymentType.ANY,
+            source=OpportunitySource.SYNTHETIC,
+        )
+        session.add_all([job, internship, hackathon])
+        await session.commit()
+        await session.refresh(job)
+        await session.refresh(internship)
+        await session.refresh(hackathon)
+
+        assert job.opportunity_type == OpportunityType.JOB
+        assert internship.opportunity_type == OpportunityType.INTERNSHIP
+        assert hackathon.opportunity_type == OpportunityType.HACKATHON
 
 
 @pytest.mark.asyncio
