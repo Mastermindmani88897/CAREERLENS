@@ -9,6 +9,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from enum import StrEnum
+
 from app.models.enums import (
     EducationLevel,
     EmploymentType,
@@ -16,6 +18,15 @@ from app.models.enums import (
     OpportunityType,
     WorkMode,
 )
+
+
+class OpportunitySortBy(StrEnum):
+    """Sorting options for Phase 15 Opportunity Discovery."""
+
+    NEWEST = "newest"
+    OLDEST = "oldest"
+    DEADLINE_SOONEST = "deadline_soonest"
+    TITLE_ASC = "title_asc"
 
 
 class RawOpportunityRow(BaseModel):
