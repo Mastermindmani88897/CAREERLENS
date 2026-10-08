@@ -361,6 +361,17 @@ async def sync_profile_from_resume(
     # Commit all synchronizations in an atomic transaction
     await db.commit()
 
+    # Attempt candidate profile embedding generation
+    try:
+        from app.services.embeddings import generate_candidate_profile_embedding
+
+        await generate_candidate_profile_embedding(db, profile.id, commit=True)
+    except Exception as emb_exc:
+        logger.warning(
+            "Non-fatal error generating candidate profile embedding during resume sync: %s",
+            type(emb_exc).__name__,
+        )
+
     logger.info(
         "Candidate profile synchronized from resume: user_id=%s, resume_id=%s, "
         "fields_updated=%s, skills_added=%d, edu_added=%d, exp_added=%d, "

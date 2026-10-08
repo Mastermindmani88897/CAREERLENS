@@ -182,6 +182,7 @@ async def ingest_raw_records(
     created = 0
     skipped_duplicates = 0
     errors: list[dict[str, Any]] = []
+    created_opp_ids: list[uuid.UUID] = []
 
     for idx, raw in enumerate(raw_records):
         row_num = idx + 1
@@ -319,6 +320,7 @@ async def ingest_raw_records(
                 await db.flush()
 
             created += 1
+            created_opp_ids.append(opp.id)
 
         except Exception as exc:
             logger.error(
@@ -332,6 +334,19 @@ async def ingest_raw_records(
             )
 
     await db.commit()
+
+    # Attempt embedding generation for newly created opportunities
+    if created_opp_ids:
+        try:
+            from app.services.embeddings import generate_opportunity_embeddings_batch
+
+            await generate_opportunity_embeddings_batch(db, created_opp_ids, commit=True)
+        except Exception as emb_exc:
+            logger.warning(
+                "Non-fatal error generating opportunity embeddings during ingestion: %s",
+                type(emb_exc).__name__,
+            )
+
     logger.info(
         "Opportunity batch ingestion complete: total=%d, created=%d, skipped=%d, errors=%d",
         total,

@@ -7,6 +7,7 @@ category filters, sorting, pagination, and detail retrieval.
 
 import uuid
 from datetime import date, timedelta
+
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -229,7 +230,8 @@ async def test_experience_range_interval_overlap(
     await db_session.commit()
 
     # Query 1: Filter [2, 4] -> Should overlap with Opp A [1,3], Opp B [4,7], and Opp D [None,2]
-    res1 = await async_client.get("/api/v1/opportunities/?min_experience_years=2&max_experience_years=4&page_size=100")
+    url1 = "/api/v1/opportunities/?min_experience_years=2&max_experience_years=4&page_size=100"
+    res1 = await async_client.get(url1)
     assert res1.status_code == 200
     titles1 = [i["title"] for i in res1.json()["items"]]
     assert "Junior Developer A" in titles1
@@ -238,7 +240,8 @@ async def test_experience_range_interval_overlap(
     assert "Staff Architect C" not in titles1  # C lower bound is 5, filter max is 4 -> no overlap
 
     # Query 2: Filter [6, 10] -> Should overlap with Opp B [4,7] and Opp C [5,None]
-    res2 = await async_client.get("/api/v1/opportunities/?min_experience_years=6&max_experience_years=10&page_size=100")
+    url2 = "/api/v1/opportunities/?min_experience_years=6&max_experience_years=10&page_size=100"
+    res2 = await async_client.get(url2)
     assert res2.status_code == 200
     titles2 = [i["title"] for i in res2.json()["items"]]
     assert "Mid-Senior Developer B" in titles2
@@ -342,7 +345,8 @@ async def test_sorting_options(
     assert items[1]["title"] == f"Zulu SortProject {run_id}"
 
     # Sort by deadline_soonest
-    res_deadline = await async_client.get(f"/api/v1/opportunities/?keyword={run_id}&sort_by=deadline_soonest")
+    url_d = f"/api/v1/opportunities/?keyword={run_id}&sort_by=deadline_soonest"
+    res_deadline = await async_client.get(url_d)
     assert res_deadline.status_code == 200
     items_d = res_deadline.json()["items"]
     assert len(items_d) == 2

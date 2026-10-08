@@ -39,6 +39,20 @@ from app.schemas.candidate_profile import (
 logger = logging.getLogger(__name__)
 
 
+async def _trigger_profile_embedding(db: AsyncSession, profile_id: uuid.UUID) -> None:
+    """Non-fatal candidate profile embedding generation trigger."""
+    try:
+        from app.services.embeddings import generate_candidate_profile_embedding
+
+        await generate_candidate_profile_embedding(db, profile_id, commit=True)
+    except Exception as exc:
+        logger.warning(
+            "Non-fatal error generating candidate profile embedding for %s: %s",
+            profile_id,
+            type(exc).__name__,
+        )
+
+
 # -----------------------------------------------------------------------------
 # CANDIDATE PROFILE CORE OPERATIONS
 # -----------------------------------------------------------------------------
@@ -111,6 +125,7 @@ async def create_candidate_profile(
     db.add(profile)
     await db.commit()
     await db.refresh(profile)
+    await _trigger_profile_embedding(db, profile.id)
     return profile
 
 
@@ -132,6 +147,7 @@ async def update_candidate_profile(
 
     await db.commit()
     await db.refresh(profile)
+    await _trigger_profile_embedding(db, profile.id)
     return profile
 
 
@@ -186,6 +202,7 @@ async def add_skill(
     db.add(skill)
     await db.commit()
     await db.refresh(skill)
+    await _trigger_profile_embedding(db, profile_id)
     return skill
 
 
@@ -209,6 +226,7 @@ async def delete_skill(
 
     await db.delete(skill)
     await db.commit()
+    await _trigger_profile_embedding(db, profile_id)
 
 
 # -----------------------------------------------------------------------------
@@ -243,6 +261,7 @@ async def add_education(
     db.add(edu)
     await db.commit()
     await db.refresh(edu)
+    await _trigger_profile_embedding(db, profile_id)
     return edu
 
 
@@ -279,6 +298,7 @@ async def update_education(
 
     await db.commit()
     await db.refresh(edu)
+    await _trigger_profile_embedding(db, profile_id)
     return edu
 
 
@@ -302,6 +322,7 @@ async def delete_education(
 
     await db.delete(edu)
     await db.commit()
+    await _trigger_profile_embedding(db, profile_id)
 
 
 # -----------------------------------------------------------------------------
@@ -336,6 +357,7 @@ async def add_experience(
     db.add(exp)
     await db.commit()
     await db.refresh(exp)
+    await _trigger_profile_embedding(db, profile_id)
     return exp
 
 
@@ -372,6 +394,7 @@ async def update_experience(
 
     await db.commit()
     await db.refresh(exp)
+    await _trigger_profile_embedding(db, profile_id)
     return exp
 
 
@@ -395,6 +418,7 @@ async def delete_experience(
 
     await db.delete(exp)
     await db.commit()
+    await _trigger_profile_embedding(db, profile_id)
 
 
 # -----------------------------------------------------------------------------
@@ -429,6 +453,7 @@ async def add_project(
     db.add(proj)
     await db.commit()
     await db.refresh(proj)
+    await _trigger_profile_embedding(db, profile_id)
     return proj
 
 
@@ -458,6 +483,7 @@ async def update_project(
 
     await db.commit()
     await db.refresh(proj)
+    await _trigger_profile_embedding(db, profile_id)
     return proj
 
 
@@ -481,6 +507,7 @@ async def delete_project(
 
     await db.delete(proj)
     await db.commit()
+    await _trigger_profile_embedding(db, profile_id)
 
 
 # -----------------------------------------------------------------------------
@@ -515,6 +542,7 @@ async def add_certification(
     db.add(cert)
     await db.commit()
     await db.refresh(cert)
+    await _trigger_profile_embedding(db, profile_id)
     return cert
 
 
@@ -544,6 +572,7 @@ async def update_certification(
 
     await db.commit()
     await db.refresh(cert)
+    await _trigger_profile_embedding(db, profile_id)
     return cert
 
 
@@ -567,3 +596,4 @@ async def delete_certification(
 
     await db.delete(cert)
     await db.commit()
+    await _trigger_profile_embedding(db, profile_id)

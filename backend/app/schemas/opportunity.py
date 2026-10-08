@@ -5,11 +5,10 @@ Covers raw rows, normalized DTOs, responses, pagination, and ingestion metrics.
 
 import uuid
 from datetime import date, datetime
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-
-from enum import StrEnum
 
 from app.models.enums import (
     EducationLevel,

@@ -7,6 +7,7 @@ import uuid
 from datetime import date, datetime
 from typing import TYPE_CHECKING, Any
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     Boolean,
     Date,
@@ -130,6 +131,14 @@ class CandidateProfile(Base):
     )
     portfolio_url: Mapped[str | None] = mapped_column(
         Text,
+        nullable=True,
+    )
+    profile_embedding: Mapped[list[float] | None] = mapped_column(
+        Vector(384),
+        nullable=True,
+    )
+    embedding_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
         nullable=True,
     )
     created_at: Mapped[datetime] = mapped_column(

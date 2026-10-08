@@ -172,11 +172,12 @@ async def list_opportunities(
         None,
         min_length=1,
         max_length=100,
-        description="Search substring across title, company, description, location, or required/preferred skill names",
+        description=(
+            "Search substring across title, company, description, "
+            "location, or required/preferred skill names"
+        ),
     ),
-    sort_by: OpportunitySortBy = Query(
-        OpportunitySortBy.NEWEST, description="Sorting criteria"
-    ),
+    sort_by: OpportunitySortBy = Query(OpportunitySortBy.NEWEST, description="Sorting criteria"),
 ) -> OpportunityListResponse:
     """
     Public opportunity discovery endpoint.
@@ -211,7 +212,7 @@ async def list_opportunities(
         )
 
     # 6. Experience range overlap semantics:
-    # Opportunity requirement interval: [Opportunity.min_experience_years, Opportunity.max_experience_years]
+    # Opportunity interval: [min_experience_years, max_experience_years]
     # Filter interval: [min_experience_years, max_experience_years]
     # Overlap occurs when:
     # (Opportunity.max_experience_years is NULL or Opportunity.max_experience_years >= filter_min)

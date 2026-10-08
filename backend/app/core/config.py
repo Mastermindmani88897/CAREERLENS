@@ -44,6 +44,11 @@ class Settings(BaseSettings):
     RESUME_UPLOAD_DIR: str = "./data/uploads/resumes"
     MAX_RESUME_SIZE_MB: int = 10
 
+    # Embeddings Foundation (Phase 16)
+    EMBEDDING_PROVIDER: str = "local"
+    EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
+    EMBEDDING_DIMENSION: int = 384
+
     @model_validator(mode="before")
     @classmethod
     def assemble_settings_aliases(cls, data: Any) -> Any:

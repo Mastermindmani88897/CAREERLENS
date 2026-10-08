@@ -10,7 +10,40 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### Planned
-- Phase 15: Hybrid matching engine (semantic vector similarity + deterministic eligibility)
+- Phase 17: Semantic retrieval, vector similarity search, and hybrid candidate-opportunity matching
+
+---
+
+## [0.16.0] — 2026-10-08
+
+### Added
+- **Phase 16 — Local Embedding Foundation**:
+  - Added `profile_embedding Vector(384)` and `embedding_updated_at DateTime(timezone=True)` to `CandidateProfile` via Alembic migration `e9f42a8b3c1d`.
+  - Reused existing `Opportunity.job_embedding Vector(384)` and `Opportunity.embedding_updated_at` without redundant columns.
+  - Implemented modular local embedding provider architecture under `app/services/embeddings/`:
+    - `BaseEmbeddingProvider` interface with batch and single embedding generation methods.
+    - `LocalSentenceTransformersProvider` wrapping `sentence-transformers/all-MiniLM-L6-v2` with thread-safe singleton lazy loading, forced CPU inference, input validation, and 384-dimensional output verification.
+    - `CandidateTextNormalizer` and `OpportunityTextNormalizer` providing deterministic, whitespace-safe, normalized text representations strictly excluding sensitive data (passwords, emails, phone numbers, addresses, auth tokens, compensation).
+    - `EmbeddingService` facade with non-blocking async execution via `asyncio.to_thread`, stale detection accounting for parent and child entities, safe failure handling, and batch operations.
+  - Integrated embedding lifecycle hooks into:
+    - `opportunity_ingest_service.py` (batch opportunity embedding post-commit)
+    - `profile_service.py` (profile creation, update, and child skill/experience/education/project/certification mutations)
+    - `profile_sync_service.py` (resume-to-profile sync post-commit)
+  - Added CPU-only PyTorch and sentence-transformers dependencies without CUDA or GPU requirements.
+  - Added 19 automated embedding tests in `tests/test_embeddings.py` covering provider initialization, dimension verification, normalization, determinism, lifecycle management, stale detection, safe failure handling, and privacy controls.
+  - Verified 204 passing backend tests and 56 passing frontend tests with zero regressions.
+
+---
+
+## [0.15.0] — 2026-10-08
+
+### Added
+- **Phase 15 — Opportunity Discovery & Exploration**:
+  - Implemented public active opportunity search and filtering backend in `app/services/opportunity_search_service.py` with multi-field keyword search (title, company, description, location, canonical skill names), opportunity type, work mode, employment type, location, experience range overlap, and sorting.
+  - Created public discovery API endpoint `GET /api/v1/opportunities/discover` and detail endpoint `GET /api/v1/opportunities/public/{id}`.
+  - Created React frontend discovery interface in `frontend/src/features/opportunities/` with search input, filters, sort controls, opportunity cards, detail view, and safe external link handling (`rel="noopener noreferrer"`).
+  - Added 8 backend discovery tests in `tests/test_opportunity_discovery.py` and 5 frontend discovery tests in `frontend/src/features/opportunities/__tests__/`.
+  - Verified 185 passing backend tests and 56 passing frontend tests.
 
 ---
 

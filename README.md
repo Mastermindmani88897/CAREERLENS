@@ -22,10 +22,10 @@ The system uses a **hybrid matching engine** combining semantic vector similarit
 
 ## Project Status
 
-> 🏆 **Phases 1–13 Completed**
+> 🏆 **Phases 1–16 Completed**
 >
-> All foundational infrastructure, data models, authentication, frontend scaffold, security hardening, testing foundations, resume extraction pipeline, candidate profile API with resume synchronization, and the candidate profile frontend interface are verified and complete.
-> Scheduled Next: **Phase 14 — Job Ingestion Pipeline** (NOT started).
+> All foundational infrastructure, data models, authentication, frontend scaffold, security hardening, testing foundations, resume extraction pipeline, candidate profile API with resume synchronization, candidate profile frontend, opportunity ingestion, opportunity discovery, and local embedding foundation are verified and complete.
+> Scheduled Next: **Phase 17 — Semantic Retrieval & Vector Search** (NOT started).
 
 ---
 
@@ -46,18 +46,21 @@ The system uses a **hybrid matching engine** combining semantic vector similarit
 | **Phase 11** | Resume Parsing & Extraction Pipeline | ✅ **COMPLETE** |
 | **Phase 12** | Candidate Profile API & Resume Synchronization | ✅ **COMPLETE** |
 | **Phase 13** | Candidate Profile Frontend | ✅ **COMPLETE** |
-| **Phase 14** | Job Ingestion Pipeline | ⏳ **SCHEDULED NEXT** |
+| **Phase 14** | Opportunity Ingestion & Normalization Foundation | ✅ **COMPLETE** |
+| **Phase 15** | Opportunity Discovery & Exploration | ✅ **COMPLETE** |
+| **Phase 16** | Local Embedding Foundation (`all-MiniLM-L6-v2`) | ✅ **COMPLETE** |
+| **Phase 17** | Semantic Retrieval & Vector Search | ⏳ **SCHEDULED NEXT** |
 
 ---
 
 ## Current Architecture & Scope Boundaries
 
-CareerLens is implemented as a **Modular Monolith** (see [`docs/architecture.md`](docs/architecture.md) and [`docs/roadmap.md`](docs/roadmap.md)):
+CareerLens is implemented as a **Modular Monolith** (see [`docs/architecture.md`](docs/architecture.md), [`docs/embeddings.md`](docs/embeddings.md), and [`docs/roadmap.md`](docs/roadmap.md)):
 
-- **Backend**: Python 3.12, FastAPI, SQLAlchemy 2.0 (asyncio), Alembic (`c7e23d4f5a6b`)
+- **Backend**: Python 3.12, FastAPI, SQLAlchemy 2.0 (asyncio), Alembic (`e9f42a8b3c1d`)
 - **Database**: PostgreSQL 18.6 with pgvector 0.8.6 (`careerlens_db`, `careerlens_test`)
 - **Frontend**: React 19, TypeScript, Vite, Tailwind CSS v4, Lucide React
-- **Testing**: Pytest (94 tests), Vitest (23 tests), Testing Library, deterministic factories
+- **Testing**: Pytest (204 tests), Vitest (56 tests), Testing Library, deterministic factories
 - **Security**: Ruff, Bandit, Oxlint, npm audit, response headers, log redaction, error masking
 
 > [!NOTE]
