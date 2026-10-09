@@ -11,6 +11,7 @@ export function Navbar() {
   const navLinks = [
     { to: '/', label: 'Home' },
     { to: '/opportunities', label: 'Opportunities' },
+    { to: '/recommendations', label: 'Recommendations' },
     { to: '/dashboard', label: 'Dashboard' },
     { to: '/resume', label: 'Resume' },
     { to: '/profile', label: 'Profile' },

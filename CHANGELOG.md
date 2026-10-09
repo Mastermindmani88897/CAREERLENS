@@ -10,7 +10,32 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [Unreleased]
 
 ### Planned
-- Phase 17: Semantic retrieval, vector similarity search, and hybrid candidate-opportunity matching
+- Phase 19+: Hybrid matching engine, explainable AI, and subsequent roadmap phases
+
+---
+
+## [0.18.0] — 2026-10-09
+
+### Added
+- **Phase 18 — Recommendations Frontend (Semantic Opportunity Recommendations)**:
+  - Created strongly-typed TypeScript recommendation interfaces in `frontend/src/types/recommendation.ts` strictly mirroring backend schemas (`SemanticOpportunityItem`, `RecommendationListResponse`, `RecommendationFilterParams`).
+  - Implemented `frontend/src/services/recommendationService.ts` with native fetch, bearer token handling, query parameter serialization, and structured error handling (`RecommendationError`) for 400, 401, 404, and 500 status codes.
+  - Implemented `frontend/src/components/recommendations/RecommendationCard.tsx` featuring structured metadata badges, compensation formatting, safe plain-text snippets (XSS-safe), and a neutral cosine similarity indicator (`Cosine: +0.84`) preserving the `[-1.0, 1.0]` range without artificial hiring probabilities or biased color thresholds.
+  - Implemented `frontend/src/components/recommendations/RecommendationFilters.tsx` supporting backend-verified facets (`opportunity_type`, `work_mode`, `employment_type`, `location`) and filter reset actions.
+  - Implemented `frontend/src/pages/RecommendationsPage.tsx` with dedicated, accessible UX states for loading skeletons, empty results, 404 candidate profile missing (CTA to `/profile`), 400 profile text insufficient (CTA to `/profile`), 401 unauthorized (CTA to `/login`), and 500 retryable error state.
+  - Registered `/recommendations` route in `frontend/src/App.tsx` and added navigation link to `frontend/src/components/layout/Navbar.tsx`.
+  - Added comprehensive test suite `frontend/src/test/Recommendations.test.tsx` (11 tests) and updated `App.test.tsx` (10 tests). Total frontend tests passing: 68/68.
+
+---
+
+## [0.17.0] — 2026-10-09
+
+### Added
+- **Phase 17 — Semantic Retrieval & Vector Search**:
+  - Implemented authenticated semantic opportunity retrieval endpoint `GET /api/v1/recommendations/`.
+  - pgvector cosine distance search against active opportunity embeddings in PostgreSQL.
+  - Candidate profile vector alignment ordering in `[-1.0, 1.0]`.
+  - Added 21 backend semantic retrieval tests in `backend/tests/test_semantic_retrieval.py`. Total backend tests passing: 225/225.
 
 ---
 

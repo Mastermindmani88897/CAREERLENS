@@ -22,10 +22,10 @@ The system uses a **hybrid matching engine** combining semantic vector similarit
 
 ## Project Status
 
-> 🏆 **Phases 1–16 Completed**
+> 🏆 **Phases 1–18 Completed**
 >
-> All foundational infrastructure, data models, authentication, frontend scaffold, security hardening, testing foundations, resume extraction pipeline, candidate profile API with resume synchronization, candidate profile frontend, opportunity ingestion, opportunity discovery, and local embedding foundation are verified and complete.
-> Scheduled Next: **Phase 17 — Semantic Retrieval & Vector Search** (NOT started).
+> All foundational infrastructure, data models, authentication, frontend scaffold, security hardening, testing foundations, resume extraction pipeline, candidate profile API with resume synchronization, candidate profile frontend, opportunity ingestion, opportunity discovery, local embedding foundation, semantic retrieval vector search, and recommendations frontend are verified and complete.
+> Scheduled Next: **Phase 19+ — Subsequent Roadmap Phases**.
 
 ---
 
@@ -49,7 +49,8 @@ The system uses a **hybrid matching engine** combining semantic vector similarit
 | **Phase 14** | Opportunity Ingestion & Normalization Foundation | ✅ **COMPLETE** |
 | **Phase 15** | Opportunity Discovery & Exploration | ✅ **COMPLETE** |
 | **Phase 16** | Local Embedding Foundation (`all-MiniLM-L6-v2`) | ✅ **COMPLETE** |
-| **Phase 17** | Semantic Retrieval & Vector Search | ⏳ **SCHEDULED NEXT** |
+| **Phase 17** | Semantic Retrieval & Vector Search | ✅ **COMPLETE** |
+| **Phase 18** | Recommendations Frontend (Semantic Opportunity Recommendations) | ✅ **COMPLETE** |
 
 ---
 

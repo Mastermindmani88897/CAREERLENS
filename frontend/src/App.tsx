@@ -8,6 +8,7 @@ import { NotFoundPage } from '@/pages/NotFoundPage'
 import { OpportunitiesPage } from '@/pages/OpportunitiesPage'
 import { OpportunityDetailPage } from '@/pages/OpportunityDetailPage'
 import { ProfilePage } from '@/pages/ProfilePage'
+import { RecommendationsPage } from '@/pages/RecommendationsPage'
 import { RegisterPage } from '@/pages/RegisterPage'
 import { ResumePage } from '@/pages/ResumePage'
 
@@ -21,6 +22,7 @@ export function App() {
           <Route path="register" element={<RegisterPage />} />
           <Route path="opportunities" element={<OpportunitiesPage />} />
           <Route path="opportunities/:id" element={<OpportunityDetailPage />} />
+          <Route path="recommendations" element={<RecommendationsPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="resume" element={<ResumePage />} />
           <Route path="profile" element={<ProfilePage />} />

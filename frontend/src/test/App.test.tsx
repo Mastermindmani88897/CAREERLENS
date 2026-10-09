@@ -113,6 +113,21 @@ describe('CareerLens Application Shell & Routing', () => {
     ).toBeInTheDocument()
   })
 
+  it('navigates to recommendations page via navigation link', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    const recLinks = screen.getAllByRole('link', {
+      name: /Recommendations/i,
+    })
+    expect(recLinks.length).toBeGreaterThan(0)
+    await user.click(recLinks[0])
+
+    expect(
+      screen.getByRole('heading', { name: /Personalized Recommendations/i })
+    ).toBeInTheDocument()
+  })
+
   it('never displays sensitive credentials or server secrets in rendered UI', () => {
     const { container } = render(<App />)
     const html = container.innerHTML
