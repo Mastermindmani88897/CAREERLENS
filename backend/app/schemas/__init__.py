@@ -32,6 +32,10 @@ from app.schemas.opportunity import (
     OpportunityUpdate,
     RawOpportunityRow,
 )
+from app.schemas.recommendation import (
+    RecommendationListResponse,
+    SemanticOpportunityItem,
+)
 from app.schemas.resume import (
     ContactInfo,
     DetectedSections,
@@ -81,10 +85,12 @@ __all__ = [
     "ProjectResponse",
     "ProjectUpdate",
     "RawOpportunityRow",
+    "RecommendationListResponse",
     "ResumeDetailResponse",
     "ResumeListResponse",
     "ResumeResponse",
     "ResumeStatus",
+    "SemanticOpportunityItem",
     "SkillCreate",
     "SkillResponse",
     "Token",

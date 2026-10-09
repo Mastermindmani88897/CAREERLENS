@@ -208,6 +208,13 @@ async def generate_candidate_profile_embedding(
             return None
 
         text = build_candidate_embedding_text(profile)
+        if not text.strip():
+            logger.warning(
+                "Cannot generate candidate embedding: profile has no content",
+                extra={"entity_type": "candidate_profile", "entity_id": str(profile_id)},
+            )
+            return None
+
         vector = await embed_text_async(text)
 
         now_utc = datetime.now(UTC)
@@ -268,6 +275,13 @@ async def generate_opportunity_embedding(
             return None
 
         text = build_opportunity_embedding_text(opp, opp.skills)
+        if not text.strip():
+            logger.warning(
+                "Cannot generate opportunity embedding: opportunity has no content",
+                extra={"entity_type": "opportunity", "entity_id": str(opportunity_id)},
+            )
+            return None
+
         vector = await embed_text_async(text)
 
         now_utc = datetime.now(UTC)

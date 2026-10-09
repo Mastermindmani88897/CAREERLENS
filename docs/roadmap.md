@@ -58,8 +58,8 @@ CareerLens development is organized into three major milestone horizons:
 | **Phase 13** | Candidate Profile Frontend | **COMPLETE** | `6713079` |
 | **Phase 14** | Opportunity Ingestion & Normalization Foundation | **COMPLETE** | `3de7e5d` |
 | **Phase 15** | Opportunity Discovery & Exploration | **COMPLETE** | `65ca3d0` |
-| **Phase 16** | Local Embedding Foundation (`all-MiniLM-L6-v2`) | **COMPLETE** | Phase 16 |
-| **Phase 17** | Semantic Retrieval & Vector Search | **NOT STARTED** | Awaiting authorization |
+| **Phase 16** | Local Embedding Foundation (`all-MiniLM-L6-v2`) | **COMPLETE** | `ca44193` |
+| **Phase 17** | Semantic Retrieval & Vector Search | **COMPLETE** | Phase 17 |
 | **Phase 18+** | Subsequent Phases | **NOT STARTED** | Scheduled |
 
 ---
