@@ -20,6 +20,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.api.deps import get_current_active_user
+from app.core.cache import (
+    cache,
+    make_opportunity_detail_key,
+    make_opportunity_list_key,
+)
 from app.core.logging import get_logger
 from app.db.session import get_db
 from app.models.enums import EmploymentType, OpportunityType, WorkMode
@@ -88,6 +93,8 @@ async def ingest_opportunities(
                 result.skipped_duplicates,
                 len(result.errors),
             )
+            await cache.invalidate_prefix("opp:list")
+            await cache.invalidate_prefix("recom:")
             return result
         except Exception as exc:
             logger.error("CSV ingestion failed unexpectedly: %s", exc, exc_info=True)
@@ -137,6 +144,8 @@ async def ingest_opportunities(
             result.skipped_duplicates,
             len(result.errors),
         )
+        await cache.invalidate_prefix("opp:list")
+        await cache.invalidate_prefix("recom:")
         return result
 
     raise HTTPException(
@@ -185,6 +194,24 @@ async def list_opportunities(
     Supports keyword matching across core fields and relational skill names,
     mathematical experience interval overlap, category filters, and safe sorting.
     """
+    # 0. Check cache for identical filter dimensions
+    cache_params = {
+        "page": page,
+        "page_size": page_size,
+        "opportunity_type": opportunity_type.value if opportunity_type else None,
+        "work_mode": work_mode.value if work_mode else None,
+        "employment_type": employment_type.value if employment_type else None,
+        "location": location.strip() if location else None,
+        "min_experience_years": min_experience_years,
+        "max_experience_years": max_experience_years,
+        "keyword": keyword.strip() if keyword else None,
+        "sort_by": sort_by.value if sort_by else None,
+    }
+    cache_key = make_opportunity_list_key(cache_params)
+    cached_response = await cache.get(cache_key)
+    if cached_response is not None:
+        return cached_response
+
     # 1. Base filter: Public discovery is strictly limited to active opportunities
     base_filter = [Opportunity.is_active.is_(True)]
 
@@ -282,13 +309,15 @@ async def list_opportunities(
 
     total_pages = math.ceil(total / page_size) if total > 0 else 0
 
-    return OpportunityListResponse(
+    response = OpportunityListResponse(
         items=[OpportunityResponse.model_validate(item) for item in items],
         total=total,
         page=page,
         page_size=page_size,
         total_pages=total_pages,
     )
+    await cache.set(cache_key, response, ttl=120.0)
+    return response
 
 
 @router.get(
@@ -303,6 +332,11 @@ async def get_opportunity(
     """
     Retrieve single opportunity details including relational skills by UUID.
     """
+    cache_key = make_opportunity_detail_key(id)
+    cached_opp = await cache.get(cache_key)
+    if cached_opp is not None:
+        return cached_opp
+
     stmt = select(Opportunity).options(selectinload(Opportunity.skills)).where(Opportunity.id == id)
     res = await db.execute(stmt)
     opp = res.scalar_one_or_none()
@@ -313,4 +347,6 @@ async def get_opportunity(
             detail="Opportunity not found.",
         )
 
-    return OpportunityDetailResponse.model_validate(opp)
+    response = OpportunityDetailResponse.model_validate(opp)
+    await cache.set(cache_key, response, ttl=300.0)
+    return response

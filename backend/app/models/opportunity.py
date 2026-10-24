@@ -60,6 +60,13 @@ class Opportunity(Base):
         Index("opportunities_type_idx", "opportunity_type"),
         Index("opportunities_employment_type_idx", "employment_type"),
         Index("opportunities_work_mode_idx", "work_mode"),
+        Index("opportunities_active_created_idx", "is_active", text("created_at DESC")),
+        Index(
+            "opportunities_job_embedding_hnsw_idx",
+            "job_embedding",
+            postgresql_using="hnsw",
+            postgresql_ops={"job_embedding": "vector_cosine_ops"},
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(

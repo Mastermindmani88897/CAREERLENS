@@ -23,6 +23,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.api.deps import get_current_active_user
+from app.core.cache import (
+    cache,
+    make_match_detail_key,
+    make_matches_list_key,
+)
 from app.db.session import get_db
 from app.models.enums import EligibilityStatus
 from app.models.opportunity import Opportunity
@@ -180,6 +185,9 @@ async def evaluate_matches(
 
     eval_matches.sort(key=lambda x: (x.final_score, x.computed_at), reverse=True)
 
+    await cache.invalidate_prefix(f"matches:list:{profile.id}")
+    await cache.invalidate_prefix(f"match:single:{profile.id}")
+
     return MatchListResponse(
         items=[MatchSummaryResponse.model_validate(m) for m in eval_matches],
         total=len(eval_matches),
@@ -221,6 +229,8 @@ async def trigger_match(
         semantic_similarity=payload.semantic_similarity,
         commit=True,
     )
+    await cache.invalidate_prefix(f"matches:list:{profile.id}")
+    await cache.delete(make_match_detail_key(profile.id, payload.opportunity_id))
     return MatchResponse.model_validate(match_record)
 
 
@@ -253,6 +263,17 @@ async def list_matches(
     """Retrieve paginated match records for the authenticated candidate, ordered by score."""
     profile = await _resolve_profile(db, current_user)
 
+    cache_params = {
+        "page": page,
+        "page_size": page_size,
+        "eligibility_status": eligibility_status.value if eligibility_status else None,
+        "min_score": min_score,
+    }
+    cache_key = make_matches_list_key(profile.id, cache_params)
+    cached_list = await cache.get(cache_key)
+    if cached_list is not None:
+        return cached_list
+
     filters = [Match.candidate_profile_id == profile.id]
     if eligibility_status is not None:
         filters.append(Match.eligibility_status == eligibility_status)
@@ -284,13 +305,15 @@ async def list_matches(
     result = await db.execute(stmt)
     matches = result.scalars().all()
 
-    return MatchListResponse(
+    response = MatchListResponse(
         items=[MatchSummaryResponse.model_validate(m) for m in matches],
         total=total,
         page=page,
         page_size=page_size,
         total_pages=total_pages,
     )
+    await cache.set(cache_key, response, ttl=120.0)
+    return response
 
 
 # ---------------------------------------------------------------------------
@@ -310,5 +333,13 @@ async def get_match(
 ) -> MatchResponse:
     """Return full match details for the given opportunity_id or match_id if owned by candidate."""
     profile = await _resolve_profile(db, current_user)
+
+    cache_key = make_match_detail_key(profile.id, identifier)
+    cached_match = await cache.get(cache_key)
+    if cached_match is not None:
+        return cached_match
+
     match_record = await _resolve_match_owned(db, identifier, profile.id)
-    return MatchResponse.model_validate(match_record)
+    response = MatchResponse.model_validate(match_record)
+    await cache.set(cache_key, response, ttl=120.0)
+    return response

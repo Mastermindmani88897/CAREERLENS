@@ -145,6 +145,7 @@ class Application(Base):
             name="uq_applications_candidate_opportunity",
         ),
         Index("applications_profile_status_idx", "candidate_profile_id", "status"),
+        Index("applications_profile_updated_idx", "candidate_profile_id", text("updated_at DESC")),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(

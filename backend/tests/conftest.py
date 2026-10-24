@@ -48,6 +48,16 @@ def enforce_test_database_safety() -> None:
         )
 
 
+@pytest.fixture(autouse=True)
+async def auto_clear_cache_between_tests() -> AsyncGenerator[None, None]:
+    """Ensure in-memory cache is pristine for each test execution."""
+    from app.core.cache import cache
+
+    await cache.clear()
+    yield
+    await cache.clear()
+
+
 @pytest.fixture(scope="session")
 def client() -> Generator[TestClient, None, None]:
     """Synchronous FastAPI TestClient fixture with lifespan execution."""

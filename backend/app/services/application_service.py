@@ -16,6 +16,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.cache import cache, make_applications_list_key
 from app.models.candidate import CandidateProfile
 from app.models.enums import ApplicationStatus
 from app.models.opportunity import Opportunity
@@ -139,6 +140,7 @@ async def create_application(
     db.add(history)
 
     await db.commit()
+    await cache.invalidate_prefix(f"apps:list:{profile.id}")
 
     # Refresh with eager opportunity relation
     return await get_application_by_id(db, application.id, profile.id)
@@ -191,6 +193,7 @@ async def update_application_status(
     db.add(history)
 
     await db.commit()
+    await cache.invalidate_prefix(f"apps:list:{profile_id}")
     return await get_application_by_id(db, application_id, profile_id)
 
 
@@ -230,6 +233,17 @@ async def list_applications(
     page_size: int = 20,
 ) -> ApplicationListResponse:
     """Retrieve paginated application records for the candidate with filtering and search."""
+    cache_params = {
+        "status_filter": status_filter.value if status_filter else None,
+        "search": search.strip().lower() if search else None,
+        "page": page,
+        "page_size": page_size,
+    }
+    cache_key = make_applications_list_key(profile_id, cache_params)
+    cached_list = await cache.get(cache_key)
+    if cached_list is not None:
+        return cached_list
+
     filters = [Application.candidate_profile_id == profile_id]
 
     if status_filter is not None:
@@ -273,13 +287,15 @@ async def list_applications(
     items_result = await db.execute(items_stmt)
     apps = items_result.scalars().all()
 
-    return ApplicationListResponse(
+    response = ApplicationListResponse(
         items=[ApplicationResponse.model_validate(a) for a in apps],
         total=total,
         page=page,
         page_size=page_size,
         total_pages=total_pages,
     )
+    await cache.set(cache_key, response, ttl=60.0)
+    return response
 
 
 async def delete_application(
@@ -291,3 +307,4 @@ async def delete_application(
     application = await get_application_by_id(db, application_id, profile_id)
     await db.delete(application)
     await db.commit()
+    await cache.invalidate_prefix(f"apps:list:{profile_id}")

@@ -363,6 +363,15 @@ async def sync_profile_from_resume(
 
     # Attempt candidate profile embedding generation
     try:
+        from app.core.cache import cache
+
+        await cache.invalidate_prefix(f"recom:{profile.id}")
+        await cache.invalidate_prefix(f"matches:list:{profile.id}")
+        await cache.invalidate_prefix(f"match:single:{profile.id}")
+    except Exception as c_exc:
+        logger.warning("Cache invalidation error during sync for %s: %s", profile.id, c_exc)
+
+    try:
         from app.services.embeddings import generate_candidate_profile_embedding
 
         await generate_candidate_profile_embedding(db, profile.id, commit=True)

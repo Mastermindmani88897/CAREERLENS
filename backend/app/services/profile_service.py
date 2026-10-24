@@ -40,7 +40,16 @@ logger = logging.getLogger(__name__)
 
 
 async def _trigger_profile_embedding(db: AsyncSession, profile_id: uuid.UUID) -> None:
-    """Non-fatal candidate profile embedding generation trigger."""
+    """Non-fatal candidate profile embedding generation trigger and cache invalidation."""
+    try:
+        from app.core.cache import cache
+
+        await cache.invalidate_prefix(f"recom:{profile_id}")
+        await cache.invalidate_prefix(f"matches:list:{profile_id}")
+        await cache.invalidate_prefix(f"match:single:{profile_id}")
+    except Exception as exc:
+        logger.warning("Cache invalidation error for %s: %s", profile_id, exc)
+
     try:
         from app.services.embeddings import generate_candidate_profile_embedding
 

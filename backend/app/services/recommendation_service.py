@@ -12,6 +12,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.cache import cache, make_recommendations_key
 from app.models.enums import EmploymentType, OpportunityType, WorkMode
 from app.models.opportunity import Opportunity
 from app.schemas.opportunity import OpportunityResponse
@@ -128,7 +129,21 @@ async def get_semantic_recommendations(
             ),
         )
 
-    # 4. Construct SQL filters
+    # 4. Check cache with candidate profile isolation
+    cache_params = {
+        "page": page,
+        "page_size": page_size,
+        "opportunity_type": opportunity_type.value if opportunity_type else None,
+        "work_mode": work_mode.value if work_mode else None,
+        "employment_type": employment_type.value if employment_type else None,
+        "location": location.strip() if location else None,
+    }
+    cache_key = make_recommendations_key(profile.id, cache_params)
+    cached_recom = await cache.get(cache_key)
+    if cached_recom is not None:
+        return cached_recom
+
+    # 5. Construct SQL filters
     filters = [
         Opportunity.is_active.is_(True),
         Opportunity.job_embedding.is_not(None),
@@ -201,10 +216,12 @@ async def get_semantic_recommendations(
             )
         )
 
-    return RecommendationListResponse(
+    response = RecommendationListResponse(
         items=items,
         total=total,
         page=page,
         page_size=page_size,
         total_pages=total_pages,
     )
+    await cache.set(cache_key, response, ttl=60.0)
+    return response
