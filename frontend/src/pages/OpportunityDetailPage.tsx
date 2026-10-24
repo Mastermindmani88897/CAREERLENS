@@ -1,8 +1,9 @@
 /**
- * OpportunityDetailPage for Phase 15.
- * Complete opportunity detail view with structured metadata, required/preferred skills breakdown,
- * and safe external application links.
- * Content is rendered strictly as plain text (no dangerouslySetInnerHTML, no AI match scores).
+ * OpportunityDetailPage for Phase 20.
+ * Complete opportunity detail view with structured metadata, required/preferred skills,
+ * safe external application links, and authenticated hybrid match evaluation integration.
+ * Content is rendered strictly as plain text (no dangerouslySetInnerHTML).
+ * Match calculations are performed exclusively by the backend matching engine.
  */
 
 import * as React from 'react'
@@ -16,15 +17,27 @@ import {
   DollarSign,
   ExternalLink,
   GraduationCap,
+  LogIn,
   MapPin,
+  RefreshCw,
+  Sparkles,
+  UserPlus,
 } from 'lucide-react'
 
+import { EligibilityBadge } from '@/components/matching/EligibilityBadge'
+import { MatchExplanationCard } from '@/components/matching/MatchExplanationCard'
+import { MatchScoreCard } from '@/components/matching/MatchScoreCard'
+import { MatchWarningsList } from '@/components/matching/MatchWarningsList'
+import { SevenFactorBreakdown } from '@/components/matching/SevenFactorBreakdown'
+import { SkillGapCard } from '@/components/matching/SkillGapCard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ErrorState } from '@/components/ui/error-state'
 import { LoadingState } from '@/components/ui/loading-state'
+import { getMatchByOpportunityId, triggerMatch, MatchingError } from '@/services/matchingService'
 import { getOpportunityById } from '@/services/opportunityService'
+import type { MatchResponse } from '@/types/matching'
 import type { OpportunityDetail } from '@/types/opportunity'
 
 export function OpportunityDetailPage() {
@@ -33,6 +46,21 @@ export function OpportunityDetailPage() {
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
 
+  // Matching evaluation state
+  const [isAuthenticated, setIsAuthenticated] = React.useState<boolean>(false)
+  const [match, setMatch] = React.useState<MatchResponse | null>(null)
+  const [matchLoading, setMatchLoading] = React.useState(false)
+  const [evaluating, setEvaluating] = React.useState(false)
+  const [matchError, setMatchError] = React.useState<string | null>(null)
+  const [profileMissing, setProfileMissing] = React.useState(false)
+
+  // Check authentication status on mount
+  React.useEffect(() => {
+    const token = localStorage.getItem('access_token')
+    setIsAuthenticated(Boolean(token))
+  }, [])
+
+  // Fetch opportunity detail
   const fetchDetail = React.useCallback(async () => {
     if (!id) return
     setLoading(true)
@@ -48,9 +76,67 @@ export function OpportunityDetailPage() {
     }
   }, [id])
 
+  // Fetch cached match evaluation (if authenticated, read-only GET lookup)
+  const loadExistingMatch = React.useCallback(async () => {
+    if (!id) return
+    const token = localStorage.getItem('access_token')
+    if (!token) return
+
+    setMatchLoading(true)
+    setMatchError(null)
+    setProfileMissing(false)
+    try {
+      const existingMatch = await getMatchByOpportunityId(id, token)
+      setMatch(existingMatch)
+    } catch (err: unknown) {
+      if (err instanceof MatchingError && err.status === 404) {
+        if (err.message.toLowerCase().includes('candidate profile not found')) {
+          setProfileMissing(true)
+        }
+      } else {
+        const msg = err instanceof Error ? err.message : 'Failed to load match record.'
+        setMatchError(msg)
+      }
+    } finally {
+      setMatchLoading(false)
+    }
+  }, [id])
+
   React.useEffect(() => {
     fetchDetail()
   }, [fetchDetail])
+
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      loadExistingMatch()
+    }
+  }, [isAuthenticated, loadExistingMatch])
+
+  // Explicit user-triggered evaluation (avoids expensive calculation on every render)
+  const handleEvaluateMatch = async () => {
+    if (!id) return
+    setEvaluating(true)
+    setMatchError(null)
+    setProfileMissing(false)
+    try {
+      const result = await triggerMatch(id)
+      setMatch(result)
+    } catch (err: unknown) {
+      if (err instanceof MatchingError) {
+        if (err.status === 404 && err.message.toLowerCase().includes('candidate profile')) {
+          setProfileMissing(true)
+        } else {
+          setMatchError(err.message)
+        }
+      } else if (err instanceof Error) {
+        setMatchError(err.message)
+      } else {
+        setMatchError('Failed to evaluate match. Please try again.')
+      }
+    } finally {
+      setEvaluating(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -144,7 +230,7 @@ export function OpportunityDetailPage() {
       </div>
 
       {/* Main Header Card */}
-      <div className="rounded-xl border border-border bg-card p-6 sm:p-8 space-y-4">
+      <div className="rounded-xl border border-border bg-card p-6 sm:p-8 space-y-4 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -158,6 +244,9 @@ export function OpportunityDetailPage() {
                 <Badge variant="secondary" className="capitalize text-xs">
                   {opportunity.employment_type}
                 </Badge>
+              )}
+              {match && (
+                <EligibilityBadge status={match.eligibility_status} />
               )}
             </div>
 
@@ -224,6 +313,128 @@ export function OpportunityDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Personalized Match Evaluation Section */}
+      <section aria-label="Personalized Match Evaluation" className="space-y-4">
+        {!isAuthenticated ? (
+          /* Unauthenticated Prompt */
+          <div className="rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center space-y-3">
+            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Sparkles className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-base font-bold text-foreground">Personalized Match & Eligibility Evaluation</h2>
+              <p className="text-xs text-muted-foreground max-w-lg mx-auto">
+                Sign in to view your multi-factor hybrid match score, seven-factor breakdown, skill gap analysis, and eligibility status for this role.
+              </p>
+            </div>
+            <Link to="/login">
+              <Button size="sm" className="mt-2">
+                <LogIn className="mr-2 h-4 w-4" />
+                Sign In to Evaluate Match
+              </Button>
+            </Link>
+          </div>
+        ) : profileMissing ? (
+          /* Profile Missing Notice */
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-5 space-y-3">
+            <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-bold text-sm">
+              <UserPlus className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              <span>Candidate Profile Required for Match Scoring</span>
+            </div>
+            <p className="text-xs text-amber-700/90 dark:text-amber-300/80 leading-relaxed">
+              We could not find an active candidate profile for your account. Please create or update your profile with your skills, experience, and education to evaluate match alignment.
+            </p>
+            <Link to="/profile">
+              <Button size="sm" variant="default">
+                Create Candidate Profile
+              </Button>
+            </Link>
+          </div>
+        ) : matchLoading ? (
+          /* Loading cached match */
+          <div className="p-8 rounded-xl border border-border bg-card">
+            <LoadingState message="Checking existing match evaluation..." />
+          </div>
+        ) : !match ? (
+          /* Match not yet evaluated for this opportunity */
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <h2 className="text-base font-bold text-foreground">Evaluate Your Fit for This Role</h2>
+              </div>
+              <p className="text-xs text-muted-foreground max-w-xl">
+                Run the CareerLens hybrid matching engine to evaluate your profile alignment against this opportunity across 7 factors (semantic similarity, skills, experience, education, location, work mode, and employment type).
+              </p>
+            </div>
+            <Button
+              onClick={handleEvaluateMatch}
+              disabled={evaluating}
+              className="shrink-0"
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${evaluating ? 'animate-spin' : ''}`} />
+              {evaluating ? 'Evaluating Match...' : 'Evaluate Match'}
+            </Button>
+          </div>
+        ) : (
+          /* Evaluated Match Results */
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <h2 className="text-base font-bold text-foreground">Match Evaluation & Eligibility Analysis</h2>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleEvaluateMatch}
+                disabled={evaluating}
+              >
+                <RefreshCw className={`mr-2 h-3.5 w-3.5 ${evaluating ? 'animate-spin' : ''}`} />
+                {evaluating ? 'Re-evaluating...' : 'Re-evaluate Match'}
+              </Button>
+            </div>
+
+            {/* Match Score Card with Disclaimer */}
+            <MatchScoreCard
+              finalScore={match.final_score}
+              semanticScore={match.semantic_score}
+              deterministicScore={match.deterministic_score}
+              eligibilityStatus={match.eligibility_status}
+              computedAt={match.computed_at}
+            />
+
+            {/* Warnings list if any */}
+            {match.eligibility_warnings && match.eligibility_warnings.length > 0 && (
+              <MatchWarningsList warnings={match.eligibility_warnings} />
+            )}
+
+            {/* Seven-Factor Breakdown and Skill Gap */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <SevenFactorBreakdown breakdown={match.score_breakdown} />
+              <div className="space-y-6">
+                <SkillGapCard skillGap={match.skill_gap} />
+                <MatchExplanationCard explanation={match.explanation} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {matchError && (
+          <div className="p-3.5 rounded-lg border border-rose-500/30 bg-rose-500/10 text-xs text-rose-700 dark:text-rose-400 flex items-center justify-between">
+            <span>{matchError}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleEvaluateMatch}
+              className="h-7 text-xs border-rose-500/30"
+            >
+              Retry
+            </Button>
+          </div>
+        )}
+      </section>
 
       {/* Two Column Layout: Description and Skills/Details */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

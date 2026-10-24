@@ -1,27 +1,37 @@
 /**
- * RecommendationCard component for Phase 18 Recommendations.
+ * RecommendationCard component for Phase 20 Recommendations.
  * Renders an opportunity overview card with structured metadata, badges, plain-text snippets,
- * and a neutral semantic similarity indicator (raw vector cosine alignment in [-1.0, 1.0]).
- * Never uses dangerouslySetInnerHTML, hiring probabilities, or artificial fit percentages.
+ * a neutral semantic similarity indicator (raw vector cosine alignment in [-1.0, 1.0]),
+ * and backend-calculated hybrid match scores and eligibility badges when evaluated.
+ * Never uses dangerouslySetInnerHTML or artificial client-side scores.
  */
 
 import { Link } from 'react-router-dom'
 import {
+  AlertTriangle,
   Briefcase,
   Building2,
   Calendar,
   DollarSign,
   HelpCircle,
   MapPin,
+  RefreshCw,
   Sparkles,
+  Target,
 } from 'lucide-react'
 
+import { EligibilityBadge } from '@/components/matching/EligibilityBadge'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import type { MatchSummaryResponse } from '@/types/matching'
 import type { SemanticOpportunityItem } from '@/types/recommendation'
 
 interface RecommendationCardProps {
   item: SemanticOpportunityItem
+  matchSummary?: MatchSummaryResponse
+  onEvaluate?: (opportunityId: string, semanticSimilarity?: number) => void
+  isEvaluating?: boolean
 }
 
 /**
@@ -58,7 +68,12 @@ function formatSemanticScore(similarity: number | null | undefined): {
   }
 }
 
-export function RecommendationCard({ item }: RecommendationCardProps) {
+export function RecommendationCard({
+  item,
+  matchSummary,
+  onEvaluate,
+  isEvaluating = false,
+}: RecommendationCardProps) {
   // Format opportunity type badges
   const typeBadgeVariant =
     item.opportunity_type === 'hackathon'
@@ -118,6 +133,8 @@ export function RecommendationCard({ item }: RecommendationCardProps) {
   const previewSkills = skillsList.slice(0, 4)
   const remainingSkillsCount = skillsList.length - previewSkills.length
 
+  const matchPercentage = matchSummary ? Math.round(matchSummary.final_score * 100) : null
+
   return (
     <Card className="flex flex-col h-full hover:border-primary/50 transition-colors duration-200">
       <CardHeader className="pb-3">
@@ -147,6 +164,20 @@ export function RecommendationCard({ item }: RecommendationCardProps) {
                 <span className="sr-only">({scoreInfo.text})</span>
                 <HelpCircle className="h-3 w-3 text-muted-foreground/70 shrink-0" aria-hidden="true" />
               </div>
+
+              {/* Evaluated Match Score and Eligibility Badge */}
+              {matchSummary && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-primary/10 text-primary border border-primary/20"
+                    title={`Backend hybrid match score: ${matchPercentage}%. Ranking aid only.`}
+                  >
+                    <Target className="h-3 w-3" />
+                    <span>{matchPercentage}% Match</span>
+                  </span>
+                  <EligibilityBadge status={matchSummary.eligibility_status} />
+                </div>
+              )}
             </div>
 
             <CardTitle className="text-lg font-bold line-clamp-1">
@@ -221,20 +252,45 @@ export function RecommendationCard({ item }: RecommendationCardProps) {
             )}
           </div>
         )}
+
+        {/* Warning chip if any returned in matchSummary */}
+        {matchSummary?.eligibility_warnings && matchSummary.eligibility_warnings.length > 0 && (
+          <div className="flex items-center gap-1.5 text-[11px] text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2 py-1 rounded border border-amber-500/20">
+            <AlertTriangle className="h-3 w-3 shrink-0" />
+            <span>{matchSummary.eligibility_warnings.length} eligibility warning(s)</span>
+          </div>
+        )}
       </CardContent>
 
-      <CardFooter className="pt-2 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground">
+      <CardFooter className="pt-2 border-t border-border/60 flex items-center justify-between text-xs text-muted-foreground gap-2">
         <span>
           Posted{' '}
           {item.posted_date ||
             new Date(item.created_at).toLocaleDateString()}
         </span>
-        <Link
-          to={`/opportunities/${item.id}`}
-          className="font-medium text-primary hover:underline"
-        >
-          View Details &rarr;
-        </Link>
+
+        <div className="flex items-center gap-2">
+          {!matchSummary && onEvaluate && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onEvaluate(item.id, item.semantic_similarity)}
+              disabled={isEvaluating}
+              className="h-7 text-xs px-2"
+            >
+              <RefreshCw className={`mr-1 h-3 w-3 ${isEvaluating ? 'animate-spin' : ''}`} />
+              Evaluate
+            </Button>
+          )}
+
+          <Link
+            to={`/opportunities/${item.id}`}
+            className="font-medium text-primary hover:underline flex items-center gap-1"
+          >
+            <span>View Details</span>
+            <span>&rarr;</span>
+          </Link>
+        </div>
       </CardFooter>
     </Card>
   )
