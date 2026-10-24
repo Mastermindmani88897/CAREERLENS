@@ -30,8 +30,8 @@ CareerLens development is organized into three major milestone horizons:
 
 3. **100% Production & Delivery Milestone (Phases 19–25)** — **IN PROGRESS**
    - Phase 19: Hybrid matching engine and eligibility evaluation backend — **COMPLETE**
-   - Phase 20: Opportunity exploration and recommendation frontend ← **NEXT**
-   - Phase 21: Application tracking and status transition frontend
+   - Phase 20: Opportunity exploration and recommendation frontend — **COMPLETE**
+   - Phase 21: Application tracking and status transition frontend ← **NEXT**
    - Phase 22: End-to-end integration and user acceptance testing
    - Phase 23: Performance optimization, caching, and database tuning
    - Phase 24: Deployment configuration, Docker containerization, and CI/CD
@@ -62,7 +62,8 @@ CareerLens development is organized into three major milestone horizons:
 | **Phase 17** | Semantic Retrieval & Vector Search | **COMPLETE** | `c02b070` |
 | **Phase 18** | Recommendations Frontend (Semantic Opportunity Recommendations) | **COMPLETE** | `3e35141` |
 | **Phase 19** | Hybrid Matching Engine & Eligibility Evaluation Backend | **COMPLETE** | `44ed185` |
-| **Phase 20+** | Subsequent Phases | **NOT STARTED** | Scheduled |
+| **Phase 20** | Opportunity Exploration & Recommendation Frontend | **COMPLETE** | `2bb8cc6` |
+| **Phase 21+** | Subsequent Phases | **NOT STARTED** | Scheduled |
 
 ---
 
