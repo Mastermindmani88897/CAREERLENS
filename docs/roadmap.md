@@ -34,8 +34,8 @@ CareerLens development is organized into three major milestone horizons:
    - Phase 21: Application tracking and status transition frontend — **COMPLETE**
    - Phase 22: End-to-end integration and user acceptance testing — **COMPLETE**
    - Phase 23: Performance optimization, caching, and database tuning — **COMPLETE**
-   - Phase 24: Deployment configuration, Docker containerization, and CI/CD ← **NEXT**
-   - Phase 25: Final academic project defense documentation and handover
+   - Phase 24: Deployment configuration, Docker containerization, and CI/CD — **COMPLETE**
+   - Phase 25: Final academic project defense documentation and handover ← **NEXT**
 
 ---
 
@@ -66,8 +66,8 @@ CareerLens development is organized into three major milestone horizons:
 | **Phase 21** | Application Tracking & Status Transition Frontend | **COMPLETE** | `a058bfc` |
 | **Phase 22** | End-to-End Integration & User Acceptance Testing | **COMPLETE** | `436165e` |
 | **Phase 23** | Performance Optimization, Caching & Database Tuning | **COMPLETE** | `2c25293` |
-| **Phase 24** | Deployment Configuration, Docker Containerization & CI/CD | **NEXT** | Scheduled |
-| **Phase 25** | Final Academic Project Defense Documentation & Handover | **NOT STARTED** | Scheduled |
+| **Phase 24** | Deployment Configuration, Docker Containerization & CI/CD | **COMPLETE** | `15e7c04` |
+| **Phase 25** | Final Academic Project Defense Documentation & Handover | **NEXT** | Scheduled |
 
 ---
 
