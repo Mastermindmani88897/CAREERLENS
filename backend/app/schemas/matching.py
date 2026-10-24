@@ -102,14 +102,14 @@ class EmploymentTypeBreakdown(BaseModel):
 class ScoringWeights(BaseModel):
     """Factor weights used in the final hybrid score calculation."""
 
-    skill_overlap: float = 0.35
-    experience: float = 0.25
-    education: float = 0.15
+    semantic_similarity: float = 0.35
+    skill_overlap: float = 0.25
+    experience: float = 0.15
+    education: float = 0.10
     location: float = 0.05
     work_mode: float = 0.05
     location_work_mode: float = 0.10
-    employment_type: float = 0.10
-    semantic_similarity: float = 0.05
+    employment_type: float = 0.05
 
 
 class ScoreBreakdown(BaseModel):

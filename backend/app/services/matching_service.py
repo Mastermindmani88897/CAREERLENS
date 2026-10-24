@@ -6,13 +6,13 @@ a CandidateProfile against an Opportunity and persists the result in the
 `matches` table (idempotently via upsert semantics).
 
 Scoring factor weights (totals exactly 1.00):
-  - skill_overlap        : 0.35
-  - experience           : 0.25
-  - education            : 0.15
+  - semantic_similarity  : 0.35
+  - skill_overlap        : 0.25
+  - experience           : 0.15
+  - education            : 0.10
   - location             : 0.05
   - work_mode            : 0.05
-  - employment_type      : 0.10
-  - semantic_similarity  : 0.05
+  - employment_type      : 0.05
 
 Composite location_work_mode weight = 0.10 (location 0.05 + work_mode 0.05).
 
@@ -55,26 +55,26 @@ logger = logging.getLogger(__name__)
 # Scoring weights (must sum to 1.00)
 # ---------------------------------------------------------------------------
 
-WEIGHT_SKILL_OVERLAP = 0.35
-WEIGHT_EXPERIENCE = 0.25
-WEIGHT_EDUCATION = 0.15
+WEIGHT_SEMANTIC = 0.35
+WEIGHT_SKILL_OVERLAP = 0.25
+WEIGHT_EXPERIENCE = 0.15
+WEIGHT_EDUCATION = 0.10
 WEIGHT_LOCATION = 0.05
 WEIGHT_WORK_MODE = 0.05
-WEIGHT_EMPLOYMENT_TYPE = 0.10
-WEIGHT_SEMANTIC = 0.05
+WEIGHT_EMPLOYMENT_TYPE = 0.05
 
-# Composite weight for combined location_work_mode
+# Composite weight for combined location_work_mode (0.05 + 0.05)
 WEIGHT_LOCATION_WORKMODE = round(WEIGHT_LOCATION + WEIGHT_WORK_MODE, 4)
 
 assert (
     abs(
-        WEIGHT_SKILL_OVERLAP
+        WEIGHT_SEMANTIC
+        + WEIGHT_SKILL_OVERLAP
         + WEIGHT_EXPERIENCE
         + WEIGHT_EDUCATION
         + WEIGHT_LOCATION
         + WEIGHT_WORK_MODE
         + WEIGHT_EMPLOYMENT_TYPE
-        + WEIGHT_SEMANTIC
         - 1.00
     )
     < 1e-9

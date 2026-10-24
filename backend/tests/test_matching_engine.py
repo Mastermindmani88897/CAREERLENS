@@ -1,7 +1,10 @@
 """
-Phase 19 Hybrid Matching Engine — Unit Tests (Audited).
+Phase 19 Hybrid Matching Engine — Unit Tests (Audited & Verified).
 
 Covers:
+  - Approved weights: semantic 0.35, skills 0.25, experience 0.15, education 0.10,
+    location 0.05, work_mode 0.05, employment_type 0.05 (sum = 1.00)
+  - Asserting every single weight and weighted calculation against a known example
   - Scoring boundaries (0.0, 1.0 bounds) for all factors
   - Missing information handling (no skills, no experience, no education, missing preferences)
   - Eligibility status determination across all three states (ELIGIBLE, PARTIAL, REVIEW_REQUIRED)
@@ -38,6 +41,7 @@ from app.services.matching_service import (
     score_employment_type,
     score_experience,
     score_location,
+    score_location_work_mode,
     score_skill_overlap,
     score_work_mode,
 )
@@ -171,7 +175,6 @@ class TestMergeIntervals:
         assert result == [(date(2018, 1, 1), date(2021, 1, 1))]
 
     def test_adjacent_intervals_merged(self):
-        # Jan 1 - Jan 31 and Feb 1 - Feb 28 are adjacent days
         iv1 = (date(2020, 1, 1), date(2020, 1, 31))
         iv2 = (date(2020, 2, 1), date(2020, 2, 28))
         result = _merge_intervals([iv1, iv2])
@@ -211,7 +214,6 @@ class TestTotalExperienceYears:
         exp1 = _make_experience(date(2020, 1, 1), date(2022, 1, 1))
         exp2 = _make_experience(date(2021, 1, 1), date(2023, 1, 1))
         years = _total_experience_years([exp1, exp2])
-        # 2020 to 2023 = 3 years
         assert pytest.approx(3.0, abs=0.05) == years
 
     def test_malformed_end_before_start_skipped(self):
@@ -252,7 +254,6 @@ class TestScoreSkillOverlap:
         assert "python" in result["missing_required"]
 
     def test_no_opportunity_skills(self):
-        """Opportunity with no required/preferred skills -> score = 1.0."""
         profile = _make_profile(skills=["Python"])
         opp = _make_opportunity()
         result = score_skill_overlap(profile, opp)
@@ -262,7 +263,6 @@ class TestScoreSkillOverlap:
         profile = _make_profile(skills=["Python"])
         opp = _make_opportunity(required_skills=["Python", "FastAPI", "PostgreSQL"])
         result = score_skill_overlap(profile, opp)
-        # 1 of 3 required matched, no preferred -> score = 1/3 = 0.3333
         assert result["score"] == pytest.approx(1 / 3, abs=0.01)
         assert "fastapi" in result["missing_required"]
         assert "postgresql" in result["missing_required"]
@@ -275,7 +275,6 @@ class TestScoreSkillOverlap:
             preferred_skills=["Docker"],
         )
         result = score_skill_overlap(profile, opp)
-        # required: 1/2 = 0.50, preferred: 1/1 = 1.0 -> 0.70*0.5 + 0.30*1.0 = 0.65
         assert result["score"] == pytest.approx(0.65, abs=0.01)
 
     def test_case_insensitive_matching(self):
@@ -328,8 +327,6 @@ class TestScoreExperience:
         assert result["warnings"]
 
     def test_overqualification_formula_applied(self):
-        # 5 years experience, role targets max 3:
-        # formula: max(0.60, 1.0 - 0.05 * (5 - 3)) = 1.0 - 0.10 = 0.90
         start = date.today() - timedelta(days=5 * 365)
         profile = _make_profile(experiences=[(start, None, True)])
         opp = _make_opportunity(min_experience_years=1, max_experience_years=3)
@@ -338,8 +335,6 @@ class TestScoreExperience:
         assert result["is_overqualified"] is True
 
     def test_overqualification_penalty_capped_at_0_60(self):
-        # 25 years experience, role targets max 3:
-        # formula: max(0.60, 1.0 - 0.05 * (25 - 3)) = max(0.60, -0.10) = 0.60
         start = date.today() - timedelta(days=25 * 365)
         profile = _make_profile(experiences=[(start, None, True)])
         opp = _make_opportunity(min_experience_years=1, max_experience_years=3)
@@ -380,7 +375,6 @@ class TestScoreEducation:
         assert result["score"] == 1.0
 
     def test_one_level_below_returns_0_50(self):
-        # Diploma is 1 level below Bachelor -> 0.50
         profile = _make_profile(educations=[EducationLevel.DIPLOMA])
         opp = _make_opportunity(required_education_level=EducationLevel.BACHELOR)
         result = score_education(profile, opp)
@@ -436,6 +430,13 @@ class TestScoreLocationAndWorkMode:
         assert res["score"] == 0.50
         assert any("unspecified" in w for w in res["warnings"])
 
+    def test_onsite_without_relocation_no_location_match_scores_0_20(self):
+        profile = _make_profile(location_city="Chicago", open_to_relocation=False)
+        opp = _make_opportunity(work_mode=WorkMode.ONSITE, location_city="New York")
+        res = score_location(profile, opp)
+        assert res["score"] == 0.20
+        assert any("mismatch" in w.lower() for w in res["warnings"])
+
     def test_work_mode_exact_match(self):
         profile = _make_profile(preferred_work_mode=WorkMode.HYBRID)
         opp = _make_opportunity(work_mode=WorkMode.HYBRID)
@@ -455,6 +456,18 @@ class TestScoreLocationAndWorkMode:
         assert res["score"] == 0.0
         assert res["has_conflict"] is True
 
+    def test_hybrid_opportunity_remote_candidate_scores_0_70(self):
+        profile = _make_profile(preferred_work_mode=WorkMode.REMOTE)
+        opp = _make_opportunity(work_mode=WorkMode.HYBRID)
+        res = score_work_mode(profile, opp)
+        assert res["score"] == 0.70
+
+    def test_location_work_mode_composite(self):
+        profile = _make_profile(location_city="Seattle", preferred_work_mode=WorkMode.HYBRID)
+        opp = _make_opportunity(location_city="Seattle", work_mode=WorkMode.HYBRID)
+        res = score_location_work_mode(profile, opp)
+        assert res["score"] == 1.0
+
 
 # ===========================================================================
 # SECTION 7: score_employment_type
@@ -468,6 +481,18 @@ class TestScoreEmploymentType:
         result = score_employment_type(profile, opp)
         assert result["score"] == 1.0
         assert result["is_match"] is True
+
+    def test_opportunity_any_returns_full(self):
+        profile = _make_profile(preferred_employment_type=EmploymentType.FULLTIME)
+        opp = _make_opportunity(employment_type=EmploymentType.ANY)
+        result = score_employment_type(profile, opp)
+        assert result["score"] == 1.0
+
+    def test_candidate_any_preference_returns_full(self):
+        profile = _make_profile(preferred_employment_type=EmploymentType.ANY)
+        opp = _make_opportunity(employment_type=EmploymentType.CONTRACT)
+        result = score_employment_type(profile, opp)
+        assert result["score"] == 1.0
 
     def test_missing_preference_returns_neutral_0_50(self):
         profile = _make_profile(preferred_employment_type=None)
@@ -512,9 +537,19 @@ class TestEvaluateEligibility:
         status, _ = evaluate_eligibility(skill, exp, edu, loc, wm, emp, final_score=0.45)
         assert status == EligibilityStatus.PARTIAL
 
+    def test_review_required_below_0_30(self):
+        skill = {"required_count": 2, "matched_required": ["python"], "score": 0.20}
+        exp = {"required_min_years": 3, "candidate_total_years": 2.0, "warnings": []}
+        edu = {"meets_requirement": True, "score": 1.0, "warnings": []}
+        loc = {"score": 1.0, "warnings": []}
+        wm = {"score": 1.0, "has_conflict": False, "warnings": []}
+        emp = {"is_match": True, "is_missing": False, "warnings": []}
+
+        status, _ = evaluate_eligibility(skill, exp, edu, loc, wm, emp, final_score=0.25)
+        assert status == EligibilityStatus.REVIEW_REQUIRED
+
     def test_severe_experience_shortfall_review_required(self):
         skill = {"required_count": 2, "matched_required": ["python", "sql"], "score": 1.0}
-        # Requires 5 years, candidate has 0.5 years (< 30% of 5)
         exp = {"required_min_years": 5, "candidate_total_years": 0.5, "warnings": []}
         edu = {"meets_requirement": True, "score": 1.0, "warnings": []}
         loc = {"score": 1.0, "warnings": []}
@@ -548,6 +583,21 @@ class TestEvaluateEligibility:
         status, warnings = evaluate_eligibility(skill, exp, edu, loc, wm, emp, final_score=0.75)
         assert status == EligibilityStatus.REVIEW_REQUIRED
 
+    def test_warnings_collected_from_all_factors(self):
+        skill = {"required_count": 1, "matched_required": ["python"], "warnings": []}
+        exp = {"warnings": ["Exp warning"]}
+        edu = {"meets_requirement": False, "score": 0.50, "warnings": ["Edu warning"]}
+        loc = {"warnings": ["Loc warning"]}
+        wm = {"has_conflict": False, "warnings": ["WM warning"]}
+        emp = {"is_match": True, "is_missing": False, "warnings": ["Emp warning"]}
+
+        _, warnings = evaluate_eligibility(skill, exp, edu, loc, wm, emp, final_score=0.60)
+        assert "Exp warning" in warnings
+        assert "Edu warning" in warnings
+        assert "Loc warning" in warnings
+        assert "WM warning" in warnings
+        assert "Emp warning" in warnings
+
 
 # ===========================================================================
 # SECTION 9: compute_hybrid_match
@@ -576,6 +626,32 @@ class TestComputeHybridMatch:
             employment_type=EmploymentType.FULLTIME,
         )
 
+    def test_returns_required_keys(self):
+        profile = self._strong_profile()
+        opp = self._matching_opportunity()
+        result = compute_hybrid_match(profile, opp, semantic_similarity=0.8)
+        required_keys = [
+            "semantic_score",
+            "deterministic_score",
+            "final_score",
+            "eligibility_status",
+            "eligibility_warnings",
+            "score_breakdown",
+            "explanation",
+            "skill_gap",
+        ]
+        for key in required_keys:
+            assert key in result, f"Missing key: {key}"
+
+    def test_score_bounds_always_0_to_1(self):
+        profile = self._strong_profile()
+        opp = self._matching_opportunity()
+        for sem in [-1.0, -0.5, 0.0, 0.5, 1.0]:
+            result = compute_hybrid_match(profile, opp, semantic_similarity=sem)
+            assert 0.0 <= result["final_score"] <= 1.0
+            assert 0.0 <= result["semantic_score"] <= 1.0
+            assert 0.0 <= result["deterministic_score"] <= 1.0
+
     def test_semantic_similarity_max_0_rule(self):
         profile = self._strong_profile()
         opp = self._matching_opportunity()
@@ -593,26 +669,81 @@ class TestComputeHybridMatch:
         r_pos = compute_hybrid_match(profile, opp, semantic_similarity=0.85)
         assert r_pos["semantic_score"] == pytest.approx(0.85, abs=0.001)
 
-    def test_weights_sum_to_one(self):
+    def test_weights_exact_values_and_sum(self):
+        """Verify every single weight matches the approved Phase 19 specification."""
         profile = self._strong_profile()
         opp = self._matching_opportunity()
         result = compute_hybrid_match(profile, opp, semantic_similarity=0.5)
         weights = result["score_breakdown"]["weights"]
 
-        # 7 factors sum to 1.00
+        # Exact individual factor weights
+        assert weights["semantic_similarity"] == 0.35
+        assert weights["skill_overlap"] == 0.25
+        assert weights["experience"] == 0.15
+        assert weights["education"] == 0.10
+        assert weights["location"] == 0.05
+        assert weights["work_mode"] == 0.05
+        assert weights["employment_type"] == 0.05
+        assert weights["location_work_mode"] == 0.10
+
+        # Distinct 7-factor sum must equal exactly 1.00
         distinct_sum = (
-            weights["skill_overlap"]
+            weights["semantic_similarity"]
+            + weights["skill_overlap"]
             + weights["experience"]
             + weights["education"]
             + weights["location"]
             + weights["work_mode"]
             + weights["employment_type"]
-            + weights["semantic_similarity"]
         )
         assert distinct_sum == pytest.approx(1.0, abs=1e-9)
-        assert weights["location"] == 0.05
-        assert weights["work_mode"] == 0.05
-        assert weights["location_work_mode"] == 0.10
+
+    def test_weighted_calculation_against_known_example(self):
+        """
+        Verify weighted score calculation against a hand-computed known example:
+          - semantic: 0.80 -> norm 0.80 -> 0.35 * 0.80 = 0.2800
+          - skills: 1 of 2 req, 1 of 1 pref -> 0.65 -> 0.25 * 0.65 = 0.1625
+          - experience: 3 yrs vs min 3 -> 1.00 -> 0.15 * 1.00 = 0.1500
+          - education: Diploma vs Bachelor -> 0.50 -> 0.10 * 0.50 = 0.0500
+          - location: Austin vs Austin -> 1.00 -> 0.05 * 1.00 = 0.0500
+          - work_mode: Hybrid vs Hybrid -> 1.00 -> 0.05 * 1.00 = 0.0500
+          - employment_type: Fulltime vs Fulltime -> 1.00 -> 0.05 * 1.00 = 0.0500
+          Total = 0.2800 + 0.1625 + 0.1500 + 0.0500 + 0.0500 + 0.0500 + 0.0500 = 0.7925
+          Deterministic = 0.5125 / 0.65 = 0.7885
+        """
+        start = date.today() - timedelta(days=3 * 365)
+        profile = _make_profile(
+            skills=["Python", "Docker"],
+            educations=[EducationLevel.DIPLOMA],
+            experiences=[(start, None, True)],
+            preferred_work_mode=WorkMode.HYBRID,
+            preferred_employment_type=EmploymentType.FULLTIME,
+            location_city="Austin",
+        )
+        opp = _make_opportunity(
+            required_skills=["Python", "FastAPI"],
+            preferred_skills=["Docker"],
+            min_experience_years=3,
+            required_education_level=EducationLevel.BACHELOR,
+            work_mode=WorkMode.HYBRID,
+            employment_type=EmploymentType.FULLTIME,
+            location_city="Austin",
+        )
+        result = compute_hybrid_match(profile, opp, semantic_similarity=0.80)
+
+        assert result["score_breakdown"]["semantic_similarity_normalized"] == 0.80
+        assert result["score_breakdown"]["skill_overlap"]["score"] == 0.65
+        assert result["score_breakdown"]["experience"]["score"] == pytest.approx(1.0, abs=0.01)
+        assert result["score_breakdown"]["education"]["score"] == 0.50
+        assert result["score_breakdown"]["location"]["score"] == 1.00
+        assert result["score_breakdown"]["work_mode"]["score"] == 1.00
+        assert result["score_breakdown"]["employment_type"]["score"] == 1.00
+
+        expected_final = 0.7925
+        assert result["final_score"] == pytest.approx(expected_final, abs=0.005)
+
+        expected_det = round((0.1625 + 0.1500 + 0.0500 + 0.0500 + 0.0500 + 0.0500) / 0.65, 4)
+        assert result["deterministic_score"] == pytest.approx(expected_det, abs=0.005)
 
     def test_strong_match_scores_eligible(self):
         profile = self._strong_profile()
@@ -620,3 +751,50 @@ class TestComputeHybridMatch:
         result = compute_hybrid_match(profile, opp, semantic_similarity=0.8)
         assert result["eligibility_status"] == EligibilityStatus.ELIGIBLE
         assert result["final_score"] >= 0.50
+
+    def test_poor_profile_review_required(self):
+        profile = _make_profile(
+            skills=[],
+            educations=[EducationLevel.NONE],
+            experiences=[],
+            preferred_employment_type=EmploymentType.PARTTIME,
+        )
+        opp = _make_opportunity(
+            required_skills=["Python", "FastAPI", "AWS"],
+            min_experience_years=5,
+            required_education_level=EducationLevel.MASTER,
+            employment_type=EmploymentType.FULLTIME,
+        )
+        result = compute_hybrid_match(profile, opp, semantic_similarity=0.0)
+        assert result["eligibility_status"] == EligibilityStatus.REVIEW_REQUIRED
+
+    def test_score_breakdown_contains_all_factors(self):
+        profile = self._strong_profile()
+        opp = self._matching_opportunity()
+        result = compute_hybrid_match(profile, opp, semantic_similarity=0.5)
+        bd = result["score_breakdown"]
+        assert "weights" in bd
+        assert "skill_overlap" in bd
+        assert "experience" in bd
+        assert "education" in bd
+        assert "location" in bd
+        assert "work_mode" in bd
+        assert "location_work_mode" in bd
+        assert "employment_type" in bd
+        assert "semantic_similarity_normalized" in bd
+        assert "semantic_similarity_raw" in bd
+
+    def test_skill_gap_structure_correct(self):
+        profile = _make_profile(skills=["Python"])
+        opp = _make_opportunity(required_skills=["Python", "Docker"])
+        result = compute_hybrid_match(profile, opp, semantic_similarity=0.0)
+        sg = result["skill_gap"]
+        assert "python" in sg["matched_required_skills"]
+        assert "docker" in sg["missing_required_skills"]
+
+    def test_explanation_has_strengths_and_gaps(self):
+        profile = self._strong_profile()
+        opp = self._matching_opportunity()
+        result = compute_hybrid_match(profile, opp, semantic_similarity=0.8)
+        assert "strengths" in result["explanation"]
+        assert "gaps" in result["explanation"]
