@@ -1,0 +1,111 @@
+# =============================================================================
+# CareerLens — Docker Compose Specification (compose.yaml standard)
+# =============================================================================
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: careerlens-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-careerlens_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-careerlens_secure_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-careerlens_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init-pgvector.sql:/docker-entrypoint-initdb.d/init-pgvector.sql:ro
+    ports:
+      - "${POSTGRES_BIND_IP:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-careerlens_user} -d $${POSTGRES_DB:-careerlens_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - careerlens_net
+
+  migration:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: careerlens-migration
+    restart: "no"
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      ENVIRONMENT: ${APP_ENV:-production}
+      DEBUG: "false"
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-careerlens_user}:${POSTGRES_PASSWORD:-careerlens_secure_pass}@db:5432/${POSTGRES_DB:-careerlens_db}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-default_secret_for_migrations_minimum_32_characters_long}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - careerlens_net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: careerlens-backend
+    restart: unless-stopped
+    environment:
+      ENVIRONMENT: ${APP_ENV:-production}
+      DEBUG: ${APP_DEBUG:-false}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-careerlens_user}:${POSTGRES_PASSWORD:-careerlens_secure_pass}@db:5432/${POSTGRES_DB:-careerlens_db}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost,http://localhost:80,http://localhost:3000,http://127.0.0.1:80}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      RESUME_UPLOAD_DIR: /app/data/uploads/resumes
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-local}
+      LLM_PROVIDER: ${LLM_PROVIDER:-none}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - resume_uploads:/app/data/uploads/resumes
+    depends_on:
+      db:
+        condition: service_healthy
+      migration:
+        condition: service_completed_successfully
+    ports:
+      - "${BACKEND_BIND_IP:-127.0.0.1}:${BACKEND_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - careerlens_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: careerlens-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      backend:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - careerlens_net
+
+volumes:
+  postgres_data:
+    name: careerlens_postgres_data
+  resume_uploads:
+    name: careerlens_resume_uploads
+
+networks:
+  careerlens_net:
+    name: careerlens_network
+    driver: bridge

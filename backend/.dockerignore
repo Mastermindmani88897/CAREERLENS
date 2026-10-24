@@ -1,0 +1,40 @@
+# =============================================================================
+# CareerLens — Backend Dockerignore
+# =============================================================================
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Local testing and coverage
+tests/
+htmlcov/
+.coverage
+.coverage.*
+
+# Local data, logs, and database artifacts
+data/
+*.log
+*.sqlite
+*.sqlite3
+
+# Git and IDE metadata
+.git/
+.gitignore
+.gitattributes
+.idea/
+.vscode/
+
+# Environment files with secrets
+.env
+.env.*
+!.env.example
