@@ -22,6 +22,14 @@ from app.schemas.candidate_profile import (
     SkillCreate,
     SkillResponse,
 )
+from app.schemas.matching import (
+    MatchListResponse,
+    MatchResponse,
+    MatchSummaryResponse,
+    MatchTriggerRequest,
+    ScoreBreakdown,
+    SkillGap,
+)
 from app.schemas.opportunity import (
     OpportunityCreate,
     OpportunityDetailResponse,
@@ -68,6 +76,10 @@ __all__ = [
     "ExtractedExperience",
     "ExtractedProject",
     "ExtractedSkill",
+    "MatchListResponse",
+    "MatchResponse",
+    "MatchSummaryResponse",
+    "MatchTriggerRequest",
     "OpportunityCreate",
     "OpportunityDetailResponse",
     "OpportunityIngestResult",
@@ -90,8 +102,10 @@ __all__ = [
     "ResumeListResponse",
     "ResumeResponse",
     "ResumeStatus",
+    "ScoreBreakdown",
     "SemanticOpportunityItem",
     "SkillCreate",
+    "SkillGap",
     "SkillResponse",
     "Token",
     "UserLoginRequest",

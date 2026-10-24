@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api.v1.endpoints import (
     auth,
     health,
+    matching,
     opportunities,
     profiles,
     recommendations,
@@ -19,4 +20,9 @@ api_router.include_router(
     recommendations.router,
     prefix="/recommendations",
     tags=["recommendations"],
+)
+api_router.include_router(
+    matching.router,
+    prefix="/matches",
+    tags=["matching"],
 )

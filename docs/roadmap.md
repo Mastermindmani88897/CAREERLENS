@@ -18,19 +18,19 @@ CareerLens development is organized into three major milestone horizons:
    - Reusable testing foundation (centralized pytest, test DB safety guard, deterministic factories, frontend test utilities)
    - Foundation milestone audit, quality gate verification, and checkpoint
 
-2. **60% Core Intelligence Milestone (Phases 11–18)** — **NOT STARTED**
+2. **60% Core Intelligence Milestone (Phases 11–18)** — **COMPLETE**
    - Phase 11: Resume parsing and information extraction pipeline
-   - Phase 12: Skill taxonomy normalization and extraction
-   - Phase 13: Local vector embedding pipeline (`all-MiniLM-L6-v2`) and pgvector index optimization
-   - Phase 14: Job ingestion pipelines (APIs and synthetic benchmarks)
-   - Phase 15: Hybrid matching engine (semantic vector similarity + deterministic eligibility)
-   - Phase 16: Explainable AI recommendation engine and skill-gap analyzer
-   - Phase 17: Application tracking API workflows
-   - Phase 18: AI-assisted interview preparation generator
+   - Phase 12: Candidate profile API and resume synchronization
+   - Phase 13: Candidate profile frontend
+   - Phase 14: Opportunity ingestion and normalization foundation
+   - Phase 15: Opportunity discovery and exploration
+   - Phase 16: Local embedding foundation (`all-MiniLM-L6-v2`)
+   - Phase 17: Semantic retrieval and vector search
+   - Phase 18: Recommendations frontend (semantic opportunity recommendations)
 
-3. **100% Production & Delivery Milestone (Phases 19–25)** — **NOT STARTED**
-   - Phase 19: Candidate profile and resume management frontend
-   - Phase 20: Opportunity exploration and recommendation frontend
+3. **100% Production & Delivery Milestone (Phases 19–25)** — **IN PROGRESS**
+   - Phase 19: Hybrid matching engine and eligibility evaluation backend — **COMPLETE**
+   - Phase 20: Opportunity exploration and recommendation frontend ← **NEXT**
    - Phase 21: Application tracking and status transition frontend
    - Phase 22: End-to-end integration and user acceptance testing
    - Phase 23: Performance optimization, caching, and database tuning
@@ -60,8 +60,9 @@ CareerLens development is organized into three major milestone horizons:
 | **Phase 15** | Opportunity Discovery & Exploration | **COMPLETE** | `65ca3d0` |
 | **Phase 16** | Local Embedding Foundation (`all-MiniLM-L6-v2`) | **COMPLETE** | `ca44193` |
 | **Phase 17** | Semantic Retrieval & Vector Search | **COMPLETE** | `c02b070` |
-| **Phase 18** | Recommendations Frontend (Semantic Opportunity Recommendations) | **COMPLETE** | Phase 18 |
-| **Phase 19+** | Subsequent Phases | **NOT STARTED** | Scheduled |
+| **Phase 18** | Recommendations Frontend (Semantic Opportunity Recommendations) | **COMPLETE** | `3e35141` |
+| **Phase 19** | Hybrid Matching Engine & Eligibility Evaluation Backend | **COMPLETE** | `94a0392` |
+| **Phase 20+** | Subsequent Phases | **NOT STARTED** | Scheduled |
 
 ---
 
