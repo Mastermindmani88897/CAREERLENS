@@ -10,7 +10,6 @@ from __future__ import annotations
 import math
 import uuid
 from datetime import date
-from typing import Any
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, or_, select
@@ -60,7 +59,7 @@ PERMITTED_TRANSITIONS: dict[ApplicationStatus, set[ApplicationStatus]] = {
         ApplicationStatus.REJECTED,  # Declined offer
         ApplicationStatus.WITHDRAWN,
     },
-    ApplicationStatus.REJECTED: set(),   # Terminal state
+    ApplicationStatus.REJECTED: set(),  # Terminal state
     ApplicationStatus.WITHDRAWN: set(),  # Terminal state
 }
 
@@ -110,7 +109,8 @@ async def create_application(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=(
-                f"An application for opportunity '{opp.title}' already exists with status '{existing.status.value}'."
+                f"An application for opportunity '{opp.title}' already exists "
+                f"with status '{existing.status.value}'."
             ),
         )
 
@@ -166,8 +166,10 @@ async def update_application_status(
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail=(
-                    f"Invalid status transition from '{current_status.value}' to '{target_status.value}'. "
-                    f"Permitted transitions from '{current_status.value}': {[s.value for s in allowed]}"
+                    f"Invalid status transition from '{current_status.value}' "
+                    f"to '{target_status.value}'. "
+                    f"Permitted transitions from '{current_status.value}': "
+                    f"{[s.value for s in allowed]}"
                 ),
             )
 
@@ -183,7 +185,8 @@ async def update_application_status(
     history = ApplicationStatusHistory(
         application_id=application.id,
         status=target_status,
-        notes=payload.notes or f"Transitioned from {current_status.value} to {target_status.value}.",
+        notes=payload.notes
+        or (f"Transitioned from {current_status.value} to {target_status.value}."),
     )
     db.add(history)
 

@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
+    applications,
     auth,
     health,
     matching,
@@ -8,7 +9,6 @@ from app.api.v1.endpoints import (
     profiles,
     recommendations,
     resumes,
-    applications,
 )
 
 api_router = APIRouter()

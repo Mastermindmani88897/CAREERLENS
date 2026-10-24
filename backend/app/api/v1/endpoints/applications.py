@@ -3,7 +3,7 @@ Application Tracking API endpoints for Phase 21.
 
 Provides authenticated endpoints for:
   - POST   /applications/            Create or save a new application
-  - GET    /applications/            List candidate's applications (paginated, with status/search filter)
+  - GET    /applications/            List candidate's applications (with status/search filter)
   - GET    /applications/transitions Get permitted status transition matrix
   - GET    /applications/{id}        Get full application detail with status history
   - PATCH  /applications/{id}/status Transition application status with validation
@@ -29,7 +29,6 @@ from app.schemas.application import (
     ApplicationCreate,
     ApplicationDetailResponse,
     ApplicationListResponse,
-    ApplicationResponse,
     ApplicationStatusUpdate,
 )
 from app.services.application_service import (
@@ -64,7 +63,10 @@ async def _resolve_profile(db: AsyncSession, user: User):
     response_model=ApplicationDetailResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create or save a job application",
-    description="Track an application for an active opportunity. Rejects duplicate submissions for the same opportunity with 409 Conflict.",
+    description=(
+        "Track an application for an active opportunity. "
+        "Rejects duplicate submissions for the same opportunity with 409 Conflict."
+    ),
 )
 async def create_app_endpoint(
     payload: ApplicationCreate,
@@ -86,11 +88,10 @@ async def list_apps_endpoint(
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
     status: ApplicationStatus | None = Query(
-        None, description="Filter by application status (saved, applied, oa, interview, offer, rejected, withdrawn)"
+        None,
+        description="Filter by status (saved, applied, oa, interview, offer, rejected, withdrawn)",
     ),
-    search: str | None = Query(
-        None, description="Search by opportunity title, company, or city"
-    ),
+    search: str | None = Query(None, description="Search by opportunity title, company, or city"),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
 ) -> ApplicationListResponse:
@@ -108,7 +109,7 @@ async def list_apps_endpoint(
 @router.get(
     "/transitions",
     summary="Get permitted status transition matrix",
-    description="Returns allowed status transitions for each application status in the lifecycle model.",
+    description="Returns allowed transitions for each status in the lifecycle model.",
 )
 async def get_transitions_endpoint(
     current_user: Annotated[User, Depends(get_current_active_user)],
@@ -140,7 +141,10 @@ async def get_app_endpoint(
     response_model=ApplicationDetailResponse,
     status_code=status.HTTP_200_OK,
     summary="Update application status and log audit history",
-    description="Transitions application to a new status. Rejects invalid transitions with 422 Unprocessable Entity.",
+    description=(
+        "Transitions application to a new status. "
+        "Rejects invalid transitions with 422 Unprocessable Entity."
+    ),
 )
 async def update_status_endpoint(
     application_id: uuid.UUID,

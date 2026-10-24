@@ -19,20 +19,20 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.security import create_access_token
 from app.main import app
 from app.models.candidate import CandidateProfile
-from app.models.enums import ApplicationStatus
 from app.models.opportunity import Opportunity
-from app.models.tracking import Application, ApplicationStatusHistory
 from app.models.user import User
-from app.core.security import create_access_token
 from tests.factories import CandidateProfileFactory, OpportunityFactory, UserFactory
 
 
 @pytest.fixture
 async def candidate_user(db_session: AsyncSession) -> tuple[User, CandidateProfile, str]:
     """Create a user with an associated candidate profile and valid JWT token."""
-    user = await UserFactory.create(db_session, email=f"candidate_{uuid.uuid4().hex[:8]}@example.com")
+    user = await UserFactory.create(
+        db_session, email=f"candidate_{uuid.uuid4().hex[:8]}@example.com"
+    )
     profile = await CandidateProfileFactory.create(db_session, user_id=user.id)
     await db_session.commit()
     token = create_access_token(subject=str(user.id))
@@ -308,7 +308,9 @@ class TestApplicationListingAndOwnership:
         _, profile, token = candidate_user
         headers = {"Authorization": f"Bearer {token}"}
 
-        opp1 = await OpportunityFactory.create(db_session, title="Frontend Developer", is_active=True)
+        opp1 = await OpportunityFactory.create(
+            db_session, title="Frontend Developer", is_active=True
+        )
         opp2 = await OpportunityFactory.create(db_session, title="DevOps Engineer", is_active=True)
         await db_session.commit()
 
