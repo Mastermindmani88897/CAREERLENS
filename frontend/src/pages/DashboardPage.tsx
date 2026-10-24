@@ -1,15 +1,19 @@
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
+  Award,
+  Bookmark,
   Briefcase,
-  CheckCircle2,
-  Clock,
+  CalendarCheck,
   Compass,
-  FileText,
+  Layers,
+  LogIn,
   Sparkles,
-  TrendingUp,
   Upload,
 } from 'lucide-react'
 
+import { ApplicationCard } from '@/components/applications/ApplicationCard'
+import { ApplicationFilters } from '@/components/applications/ApplicationFilters'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -20,59 +24,134 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { EmptyState } from '@/components/ui/empty-state'
+import { ErrorState } from '@/components/ui/error-state'
+import { LoadingState } from '@/components/ui/loading-state'
+import {
+  ApplicationTrackingError,
+  deleteApplication,
+  listApplications,
+  updateApplicationStatus,
+} from '@/services/applicationService'
+import type {
+  ApplicationFilterParams,
+  ApplicationResponse,
+  ApplicationStatus,
+} from '@/types/application'
 
 export function DashboardPage() {
+  const [applications, setApplications] = useState<ApplicationResponse[]>([])
+  const [totalCount, setTotalCount] = useState<number>(0)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
+  const [isUnauthenticated, setIsUnauthenticated] = useState<boolean>(false)
+
+  const [filters, setFilters] = useState<ApplicationFilterParams>({
+    status: 'all',
+    search: '',
+    page: 1,
+    page_size: 50,
+  })
+
+  // Global counts for all applications
+  const [allApps, setAllApps] = useState<ApplicationResponse[]>([])
+
+  const fetchApplications = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    setIsUnauthenticated(false)
+
+    try {
+      // 1. Fetch filtered applications for display
+      const response = await listApplications(filters)
+      setApplications(response.items)
+      setTotalCount(response.total)
+
+      // 2. Fetch unfiltered applications to calculate stat cards accurately
+      if (filters.status !== 'all' || filters.search) {
+        const fullList = await listApplications({ page: 1, page_size: 100 })
+        setAllApps(fullList.items)
+      } else {
+        setAllApps(response.items)
+      }
+    } catch (err: unknown) {
+      if (err instanceof ApplicationTrackingError) {
+        if (err.status === 401) {
+          setIsUnauthenticated(true)
+        } else {
+          setError(err.message)
+        }
+      } else if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError('Failed to load tracked applications. Please try again.')
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [filters])
+
+  useEffect(() => {
+    fetchApplications()
+  }, [fetchApplications])
+
+  const handleUpdateStatus = async (
+    applicationId: string,
+    targetStatus: ApplicationStatus,
+    notes?: string
+  ): Promise<ApplicationResponse> => {
+    const updated = await updateApplicationStatus(applicationId, {
+      status: targetStatus,
+      notes,
+    })
+    // Refresh list locally
+    setApplications((prev) =>
+      prev.map((app) => (app.id === applicationId ? updated : app))
+    )
+    setAllApps((prev) =>
+      prev.map((app) => (app.id === applicationId ? updated : app))
+    )
+    return updated
+  }
+
+  const handleDeleteApplication = async (applicationId: string): Promise<void> => {
+    await deleteApplication(applicationId)
+    setApplications((prev) => prev.filter((app) => app.id !== applicationId))
+    setAllApps((prev) => prev.filter((app) => app.id !== applicationId))
+    setTotalCount((prev) => Math.max(0, prev - 1))
+  }
+
+  // Derived application stats
+  const activeCount = allApps.filter(
+    (a) => a.status === 'applied' || a.status === 'oa'
+  ).length
+  const interviewCount = allApps.filter((a) => a.status === 'interview').length
+  const offerCount = allApps.filter((a) => a.status === 'offer').length
+  const savedCount = allApps.filter((a) => a.status === 'saved').length
+
   const stats = [
     {
       label: 'Recommended Matches',
       value: '18',
-      change: '+4 new today',
+      change: 'Explore new roles',
       icon: <Sparkles className="h-5 w-5 text-primary" aria-hidden="true" />,
     },
     {
       label: 'Active Applications',
-      value: '5',
-      change: '2 under review',
-      icon: <Briefcase className="h-5 w-5 text-emerald-500" aria-hidden="true" />,
+      value: isUnauthenticated ? '0' : String(activeCount),
+      change: activeCount === 1 ? '1 in progress' : `${activeCount} in progress`,
+      icon: <Briefcase className="h-5 w-5 text-blue-500" aria-hidden="true" />,
     },
     {
-      label: 'Average Match Score',
-      value: '87%',
-      change: '+5% vs baseline',
-      icon: <TrendingUp className="h-5 w-5 text-blue-500" aria-hidden="true" />,
+      label: 'Interview Pipeline',
+      value: isUnauthenticated ? '0' : String(interviewCount),
+      change: interviewCount === 1 ? '1 active round' : `${interviewCount} active rounds`,
+      icon: <CalendarCheck className="h-5 w-5 text-amber-500" aria-hidden="true" />,
     },
     {
-      label: 'Interview Prep Guides',
-      value: '3',
-      change: 'Ready for study',
-      icon: <FileText className="h-5 w-5 text-amber-500" aria-hidden="true" />,
-    },
-  ]
-
-  const mockOpportunities = [
-    {
-      title: 'Senior Distributed Systems Engineer',
-      company: 'CloudScale Technologies',
-      location: 'Bengaluru, India (Hybrid)',
-      score: '94%',
-      status: 'High Match',
-      skills: ['Go', 'Kubernetes', 'Distributed Consensus', 'PostgreSQL'],
-    },
-    {
-      title: 'Full Stack Cloud Architect',
-      company: 'Apex Digital Solutions',
-      location: 'Remote, India',
-      score: '89%',
-      status: 'Eligible',
-      skills: ['Python', 'FastAPI', 'React', 'AWS'],
-    },
-    {
-      title: 'Machine Learning Infrastructure Engineer',
-      company: 'Cognitive Data Labs',
-      location: 'Bengaluru, India (Onsite)',
-      score: '82%',
-      status: 'Review Required',
-      skills: ['Python', 'PyTorch', 'Vector Search', 'Docker'],
+      label: 'Offers Received',
+      value: isUnauthenticated ? '0' : String(offerCount),
+      change: offerCount === 1 ? '1 offer' : `${offerCount} offers`,
+      icon: <Award className="h-5 w-5 text-emerald-500" aria-hidden="true" />,
     },
   ]
 
@@ -86,11 +165,11 @@ export function DashboardPage() {
               Career Intelligence Dashboard
             </h1>
             <Badge variant="outline" className="text-xs font-medium">
-              Scaffold
+              Live Tracking
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">
-            Overview of matched opportunities, eligibility evaluations, and application tracking.
+            Track and manage your opportunity applications, interview pipelines, and status transitions.
           </p>
         </div>
 
@@ -101,7 +180,7 @@ export function DashboardPage() {
               Upload Resume
             </Button>
           </Link>
-          <Link to="/">
+          <Link to="/opportunities">
             <Button variant="outline" size="sm">
               <Compass className="mr-2 h-4 w-4" aria-hidden="true" />
               Explore All
@@ -125,7 +204,6 @@ export function DashboardPage() {
                 {stat.value}
               </div>
               <p className="text-xs text-muted-foreground mt-1 flex items-center">
-                <Clock className="h-3 w-3 mr-1 text-muted-foreground" aria-hidden="true" />
                 {stat.change}
               </p>
             </CardContent>
@@ -133,116 +211,124 @@ export function DashboardPage() {
         ))}
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Top Opportunity Matches */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-foreground">
-              Top Matched Opportunities
+      {/* Main Tracked Applications Section */}
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+              <Layers className="h-5 w-5 text-primary" aria-hidden="true" />
+              Application Pipeline & Status Transitions
             </h2>
-            <span className="text-xs text-muted-foreground">
-              Sorted by Hybrid Final Score
-            </span>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Review saved and submitted applications with strict lifecycle transitions.
+            </p>
           </div>
-
-          <div className="space-y-3">
-            {mockOpportunities.map((opp, idx) => (
-              <Card key={idx} className="hover:border-primary/50 transition-colors">
-                <CardHeader className="p-5 pb-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <CardTitle className="text-base font-semibold hover:text-primary transition-colors">
-                        {opp.title}
-                      </CardTitle>
-                      <CardDescription className="text-xs mt-0.5">
-                        {opp.company} &bull; {opp.location}
-                      </CardDescription>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <div className="text-lg font-bold text-primary">
-                        {opp.score}
-                      </div>
-                      <Badge
-                        variant={
-                          opp.status === 'High Match'
-                            ? 'success'
-                            : opp.status === 'Eligible'
-                              ? 'secondary'
-                              : 'outline'
-                        }
-                        className="text-[10px] px-2 py-0"
-                      >
-                        {opp.status}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-5 pt-0">
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {opp.skills.map((skill, sIdx) => (
-                      <span
-                        key={sIdx}
-                        className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-muted text-muted-foreground"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-xs">
+              <Bookmark className="mr-1 h-3 w-3" aria-hidden="true" />
+              {savedCount} Saved
+            </Badge>
           </div>
         </div>
 
-        {/* Right Column: Applications & Interview Prep Overview */}
-        <div className="space-y-6">
-          <div className="space-y-3">
-            <h2 className="text-lg font-bold text-foreground">
-              Interview Readiness
-            </h2>
-            <Card>
-              <CardHeader className="p-5 pb-2">
-                <CardTitle className="text-sm font-semibold">
-                  Prepared Modules
-                </CardTitle>
+        {/* Unauthenticated State */}
+        {isUnauthenticated && (
+          <Card className="border-border">
+            <CardContent className="p-8 text-center space-y-4">
+              <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <LogIn className="h-6 w-6" aria-hidden="true" />
+              </div>
+              <div className="max-w-md mx-auto space-y-1">
+                <CardTitle className="text-lg">Sign In to Track Applications</CardTitle>
                 <CardDescription className="text-xs">
-                  Tailored question sets based on matched opportunities
+                  Create an account or sign in to save opportunities, track application statuses, and manage your job search pipeline.
                 </CardDescription>
-              </CardHeader>
-              <CardContent className="p-5 pt-2 space-y-3 text-xs">
-                <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/40">
-                  <span className="font-medium text-foreground">
-                    Cloud Infrastructure Lead
-                  </span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center">
-                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" aria-hidden="true" />
-                    Complete
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/40">
-                  <span className="font-medium text-foreground">
-                    Backend Architecture
-                  </span>
-                  <span className="text-muted-foreground">In Review</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <Link to="/login">
+                  <Button size="sm">
+                    <LogIn className="mr-2 h-4 w-4" aria-hidden="true" />
+                    Sign In
+                  </Button>
+                </Link>
+                <Link to="/opportunities">
+                  <Button variant="outline" size="sm">
+                    Browse Opportunities
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-          <div className="space-y-3">
-            <h2 className="text-lg font-bold text-foreground">
-              Saved Collections
-            </h2>
-            <EmptyState
-              title="No custom lists yet"
-              description="Save opportunities from your recommendations to curate custom interview target lists."
-              actionLabel="Browse Recommendations"
-              onAction={() => {}}
-              className="p-6"
+        {/* Authenticated State */}
+        {!isUnauthenticated && (
+          <>
+            {/* Filters */}
+            <ApplicationFilters
+              filters={filters}
+              onFilterChange={setFilters}
+              totalCount={totalCount}
             />
-          </div>
-        </div>
+
+            {/* Loading */}
+            {isLoading && (
+              <LoadingState message="Loading your tracked applications..." />
+            )}
+
+            {/* Error */}
+            {!isLoading && error && (
+              <ErrorState
+                title="Could not load applications"
+                description={error}
+                onRetry={fetchApplications}
+                retryLabel="Retry"
+              />
+            )}
+
+            {/* Empty States */}
+            {!isLoading && !error && applications.length === 0 && (
+              <>
+                {filters.status !== 'all' || Boolean(filters.search?.trim()) ? (
+                  <EmptyState
+                    title="No matching applications"
+                    description="No tracked applications match your current status or keyword filter."
+                    actionLabel="Reset Filters"
+                    onAction={() =>
+                      setFilters({ status: 'all', search: '', page: 1, page_size: 50 })
+                    }
+                    className="p-8"
+                  />
+                ) : (
+                  <EmptyState
+                    title="No applications tracked yet"
+                    description="You haven't saved or applied to any opportunities yet. Browse recommended opportunities to begin tracking your applications."
+                    actionLabel="Explore Opportunities"
+                    onAction={() => {
+                      window.location.href = '/opportunities'
+                    }}
+                    className="p-8"
+                  />
+                )}
+              </>
+            )}
+
+            {/* Applications List */}
+            {!isLoading && !error && applications.length > 0 && (
+              <div className="space-y-4">
+                {applications.map((app) => (
+                  <ApplicationCard
+                    key={app.id}
+                    application={app}
+                    onUpdateStatus={handleUpdateStatus}
+                    onDeleteApplication={handleDeleteApplication}
+                    onRefresh={fetchApplications}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   )

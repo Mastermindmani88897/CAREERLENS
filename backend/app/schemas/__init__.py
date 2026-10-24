@@ -1,5 +1,14 @@
 """Pydantic schemas package."""
 
+from app.schemas.application import (
+    ApplicationCreate,
+    ApplicationDetailResponse,
+    ApplicationListResponse,
+    ApplicationOpportunitySummary,
+    ApplicationResponse,
+    ApplicationStatusHistoryResponse,
+    ApplicationStatusUpdate,
+)
 from app.schemas.auth import Token, UserLoginRequest, UserRegisterRequest, UserResponse
 from app.schemas.candidate_profile import (
     CertificationCreate,
@@ -61,6 +70,13 @@ from app.schemas.resume import (
 )
 
 __all__ = [
+    "ApplicationCreate",
+    "ApplicationDetailResponse",
+    "ApplicationListResponse",
+    "ApplicationOpportunitySummary",
+    "ApplicationResponse",
+    "ApplicationStatusHistoryResponse",
+    "ApplicationStatusUpdate",
     "CertificationCreate",
     "CertificationResponse",
     "CertificationUpdate",

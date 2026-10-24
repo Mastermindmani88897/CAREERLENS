@@ -8,6 +8,7 @@ from app.api.v1.endpoints import (
     profiles,
     recommendations,
     resumes,
+    applications,
 )
 
 api_router = APIRouter()
@@ -25,4 +26,9 @@ api_router.include_router(
     matching.router,
     prefix="/matches",
     tags=["matching"],
+)
+api_router.include_router(
+    applications.router,
+    prefix="/applications",
+    tags=["applications"],
 )

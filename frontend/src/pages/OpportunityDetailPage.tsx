@@ -10,6 +10,7 @@ import * as React from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
+  Bookmark,
   Briefcase,
   Building2,
   Calendar,
@@ -20,10 +21,13 @@ import {
   LogIn,
   MapPin,
   RefreshCw,
+  Send,
   Sparkles,
   UserPlus,
 } from 'lucide-react'
 
+import { ApplicationStatusBadge } from '@/components/applications/ApplicationStatusBadge'
+import { StatusTransitionModal } from '@/components/applications/StatusTransitionModal'
 import { EligibilityBadge } from '@/components/matching/EligibilityBadge'
 import { MatchExplanationCard } from '@/components/matching/MatchExplanationCard'
 import { MatchScoreCard } from '@/components/matching/MatchScoreCard'
@@ -35,8 +39,14 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ErrorState } from '@/components/ui/error-state'
 import { LoadingState } from '@/components/ui/loading-state'
+import {
+  createApplication,
+  listApplications,
+  updateApplicationStatus,
+} from '@/services/applicationService'
 import { getMatchByOpportunityId, triggerMatch, MatchingError } from '@/services/matchingService'
 import { getOpportunityById } from '@/services/opportunityService'
+import type { ApplicationResponse, ApplicationStatus } from '@/types/application'
 import type { MatchResponse } from '@/types/matching'
 import type { OpportunityDetail } from '@/types/opportunity'
 
@@ -53,6 +63,12 @@ export function OpportunityDetailPage() {
   const [evaluating, setEvaluating] = React.useState(false)
   const [matchError, setMatchError] = React.useState<string | null>(null)
   const [profileMissing, setProfileMissing] = React.useState(false)
+
+  // Application tracking state
+  const [trackedApp, setTrackedApp] = React.useState<ApplicationResponse | null>(null)
+  const [trackingLoading, setTrackingLoading] = React.useState(false)
+  const [trackingError, setTrackingError] = React.useState<string | null>(null)
+  const [isTransitionModalOpen, setIsTransitionModalOpen] = React.useState(false)
 
   // Check authentication status on mount
   React.useEffect(() => {
@@ -106,11 +122,61 @@ export function OpportunityDetailPage() {
     fetchDetail()
   }, [fetchDetail])
 
+  // Fetch tracked application if authenticated
+  const loadTrackedApplication = React.useCallback(async () => {
+    if (!id) return
+    const token = localStorage.getItem('access_token')
+    if (!token) return
+
+    setTrackingLoading(true)
+    try {
+      const res = await listApplications({ page: 1, page_size: 100 }, token)
+      const existing = res.items.find((a) => a.opportunity_id === id) || null
+      setTrackedApp(existing)
+    } catch {
+      // Ignored if candidate has no profile or applications
+    } finally {
+      setTrackingLoading(false)
+    }
+  }, [id])
+
   React.useEffect(() => {
     if (isAuthenticated) {
       loadExistingMatch()
+      loadTrackedApplication()
     }
-  }, [isAuthenticated, loadExistingMatch])
+  }, [isAuthenticated, loadExistingMatch, loadTrackedApplication])
+
+  const handleCreateApplication = async (status: ApplicationStatus) => {
+    if (!id) return
+    setTrackingLoading(true)
+    setTrackingError(null)
+    try {
+      const created = await createApplication({
+        opportunity_id: id,
+        status,
+      })
+      setTrackedApp(created)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to track application.'
+      setTrackingError(msg)
+    } finally {
+      setTrackingLoading(false)
+    }
+  }
+
+  const handleUpdateStatus = async (
+    applicationId: string,
+    targetStatus: ApplicationStatus,
+    notes?: string
+  ): Promise<ApplicationResponse> => {
+    const updated = await updateApplicationStatus(applicationId, {
+      status: targetStatus,
+      notes,
+    })
+    setTrackedApp(updated)
+    return updated
+  }
 
   // Explicit user-triggered evaluation (avoids expensive calculation on every render)
   const handleEvaluateMatch = async () => {
@@ -214,8 +280,8 @@ export function OpportunityDetailPage() {
   }
 
   // Separate required and preferred relational skills
-  const requiredSkills = opportunity.skills.filter((s) => s.is_required)
-  const preferredSkills = opportunity.skills.filter((s) => !s.is_required)
+  const requiredSkills = opportunity.skills?.filter((s) => s.is_required) || []
+  const preferredSkills = opportunity.skills?.filter((s) => !s.is_required) || []
 
   return (
     <div className="space-y-6 pb-16 max-w-5xl mx-auto">
@@ -260,21 +326,82 @@ export function OpportunityDetailPage() {
             </div>
           </div>
 
-          {/* External Apply Button */}
-          {opportunity.job_url && isSafeExternalUrl(opportunity.job_url) && (
-            <div className="sm:self-center shrink-0">
+          {/* Action Buttons: Tracking & External Apply */}
+          <div className="flex flex-wrap items-center gap-2 sm:self-center shrink-0">
+            {isAuthenticated ? (
+              trackedApp ? (
+                <div className="flex items-center gap-2 bg-muted/60 p-1.5 rounded-lg border border-border">
+                  <ApplicationStatusBadge status={trackedApp.status} />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsTransitionModalOpen(true)}
+                    className="h-8 text-xs font-semibold"
+                  >
+                    <RefreshCw className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                    Update Status
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={trackingLoading || opportunity.is_active === false}
+                    onClick={() => handleCreateApplication('saved')}
+                    className="h-9 text-xs font-semibold"
+                  >
+                    <Bookmark className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                    Save Opportunity
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={trackingLoading || opportunity.is_active === false}
+                    onClick={() => handleCreateApplication('applied')}
+                    className="h-9 text-xs font-semibold"
+                  >
+                    <Send className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                    Mark Applied
+                  </Button>
+                </div>
+              )
+            ) : (
+              <Link to="/login">
+                <Button variant="outline" size="sm" className="h-9 text-xs font-semibold">
+                  <Bookmark className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                  Save Opportunity
+                </Button>
+              </Link>
+            )}
+
+            {/* External Apply Button */}
+            {opportunity.job_url && isSafeExternalUrl(opportunity.job_url) && (
               <a
                 href={opportunity.job_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Apply on Official Site
-                <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
+                <ExternalLink className="ml-1.5 h-4 w-4" aria-hidden="true" />
               </a>
-            </div>
-          )}
+            )}
+          </div>
         </div>
+
+        {trackingError && (
+          <div className="p-3 text-xs rounded-lg bg-destructive/10 text-destructive border border-destructive/20 flex items-center justify-between">
+            <span>{trackingError}</span>
+            <button
+              type="button"
+              onClick={() => setTrackingError(null)}
+              className="text-xs font-bold underline ml-2 cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {/* Highlight Metadata Row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-border/60 text-xs sm:text-sm">
@@ -524,6 +651,16 @@ export function OpportunityDetailPage() {
           </Card>
         </div>
       </div>
+
+      {trackedApp && (
+        <StatusTransitionModal
+          application={trackedApp}
+          isOpen={isTransitionModalOpen}
+          onClose={() => setIsTransitionModalOpen(false)}
+          onTransitionSuccess={(updated) => setTrackedApp(updated)}
+          onUpdateStatus={handleUpdateStatus}
+        />
+      )}
     </div>
   )
 }
