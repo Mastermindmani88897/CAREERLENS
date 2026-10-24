@@ -2,9 +2,9 @@
 Pydantic schemas for Phase 19 Hybrid Matching Engine.
 
 Defines strongly typed request/response models for:
-  - Single-match trigger payloads
-  - Six-factor score breakdowns
-  - Eligibility status and warnings
+  - Match trigger and evaluation payloads (single and batch)
+  - Factor score breakdowns
+  - Eligibility status and structured warnings
   - Match response (single and paginated list)
 """
 
@@ -54,16 +54,37 @@ class EducationBreakdown(BaseModel):
     required_level: str
     candidate_highest_level: str
     meets_requirement: bool
+    missing_evidence: bool = False
     warnings: list[str] = Field(default_factory=list)
 
 
-class LocationWorkModeBreakdown(BaseModel):
-    """Location and work-mode factor details."""
+class LocationBreakdown(BaseModel):
+    """Geographic location factor details."""
+
+    score: float = Field(..., ge=0.0, le=1.0)
+    opportunity_location: str | None = None
+    candidate_location: str | None = None
+    open_to_relocation: bool = False
+    warnings: list[str] = Field(default_factory=list)
+
+
+class WorkModeBreakdown(BaseModel):
+    """Work mode factor details."""
 
     score: float = Field(..., ge=0.0, le=1.0)
     opportunity_work_mode: str
     candidate_preferred_work_mode: str
-    open_to_relocation: bool
+    has_conflict: bool = False
+    warnings: list[str] = Field(default_factory=list)
+
+
+class LocationWorkModeBreakdown(BaseModel):
+    """Combined location and work-mode factor details for backward compatibility."""
+
+    score: float = Field(..., ge=0.0, le=1.0)
+    opportunity_work_mode: str
+    candidate_preferred_work_mode: str
+    open_to_relocation: bool = False
     warnings: list[str] = Field(default_factory=list)
 
 
@@ -74,27 +95,32 @@ class EmploymentTypeBreakdown(BaseModel):
     opportunity_employment_type: str
     candidate_preferred_employment_type: str
     is_match: bool
+    is_missing: bool = False
     warnings: list[str] = Field(default_factory=list)
 
 
 class ScoringWeights(BaseModel):
     """Factor weights used in the final hybrid score calculation."""
 
-    skill_overlap: float
-    experience: float
-    education: float
-    location_work_mode: float
-    employment_type: float
-    semantic_similarity: float
+    skill_overlap: float = 0.35
+    experience: float = 0.25
+    education: float = 0.15
+    location: float = 0.05
+    work_mode: float = 0.05
+    location_work_mode: float = 0.10
+    employment_type: float = 0.10
+    semantic_similarity: float = 0.05
 
 
 class ScoreBreakdown(BaseModel):
-    """Full six-factor score breakdown."""
+    """Full score breakdown across all factors."""
 
     weights: ScoringWeights
     skill_overlap: SkillOverlapBreakdown
     experience: ExperienceBreakdown
     education: EducationBreakdown
+    location: LocationBreakdown | None = None
+    work_mode: WorkModeBreakdown | None = None
     location_work_mode: LocationWorkModeBreakdown
     employment_type: EmploymentTypeBreakdown
     semantic_similarity_normalized: float = Field(..., ge=0.0, le=1.0)
@@ -135,15 +161,13 @@ class MatchResponse(BaseModel):
         ...,
         ge=0.0,
         le=1.0,
-        description=(
-            "Semantic similarity normalized to [0.0, 1.0] and weighted at 5% of final score"
-        ),
+        description="Cosine similarity normalized to [0.0, 1.0] via max(0, cosine)",
     )
     deterministic_score: float = Field(
         ...,
         ge=0.0,
         le=1.0,
-        description="Deterministic factor score (excludes semantic component)",
+        description="Deterministic score across non-semantic factors",
     )
     final_score: float = Field(
         ...,
@@ -152,28 +176,14 @@ class MatchResponse(BaseModel):
         description="Weighted composite hybrid score",
     )
 
-    eligibility_status: EligibilityStatus = Field(
-        ...,
-        description="Eligibility determination: eligible, partial, or review_required",
-    )
-    eligibility_warnings: list[str] | None = Field(
-        None,
-        description="Structured warnings explaining eligibility constraints or mismatches",
-    )
+    eligibility_status: EligibilityStatus
+    eligibility_warnings: list[str] | None = None
 
-    score_breakdown: dict[str, Any] = Field(
-        ...,
-        description="Full six-factor score breakdown with per-factor details",
-    )
-    explanation: dict[str, Any] = Field(
-        ...,
-        description="Human-readable strengths and gaps",
-    )
-    skill_gap: dict[str, Any] = Field(
-        ...,
-        description="Matched and missing required/preferred skills",
-    )
-    computed_at: datetime = Field(..., description="Timestamp when match was last computed")
+    score_breakdown: dict[str, Any]
+    explanation: dict[str, Any]
+    skill_gap: dict[str, Any]
+
+    computed_at: datetime
 
 
 class MatchSummaryResponse(BaseModel):
@@ -184,7 +194,9 @@ class MatchSummaryResponse(BaseModel):
     id: uuid.UUID
     candidate_profile_id: uuid.UUID
     opportunity_id: uuid.UUID
-    final_score: float = Field(..., ge=0.0, le=1.0)
+    semantic_score: float
+    deterministic_score: float
+    final_score: float
     eligibility_status: EligibilityStatus
     eligibility_warnings: list[str] | None = None
     computed_at: datetime
@@ -196,13 +208,7 @@ class MatchSummaryResponse(BaseModel):
 
 
 class MatchTriggerRequest(BaseModel):
-    """
-    Payload to trigger a hybrid match evaluation.
-
-    The caller provides the opportunity_id.  The candidate profile is resolved
-    from the authenticated user's session.  semantic_similarity is optional;
-    if omitted it defaults to 0.0 (neutral, no vector bias).
-    """
+    """Payload to trigger a hybrid match evaluation for a single opportunity."""
 
     opportunity_id: uuid.UUID = Field(..., description="Opportunity to evaluate against")
     semantic_similarity: float = Field(
@@ -211,9 +217,32 @@ class MatchTriggerRequest(BaseModel):
         le=1.0,
         description=(
             "Pre-computed cosine similarity score from the semantic retrieval pipeline. "
-            "Pass the value from /api/v1/recommendations if available. "
             "Defaults to 0.0 (neutral) when not provided."
         ),
+    )
+
+
+class MatchEvaluateRequest(BaseModel):
+    """
+    Payload for POST /api/v1/matches/evaluate.
+    Accepts optional list of opportunity_ids and a limit capped at 100.
+    """
+
+    opportunity_ids: list[uuid.UUID] | None = Field(
+        default=None,
+        description="Optional list of specific opportunity IDs to evaluate",
+    )
+    limit: int = Field(
+        default=20,
+        ge=1,
+        le=100,
+        description="Maximum number of opportunities to evaluate (capped at 100)",
+    )
+    semantic_similarity: float | None = Field(
+        default=None,
+        ge=-1.0,
+        le=1.0,
+        description="Optional pre-computed cosine similarity score (defaults to 0.0)",
     )
 
 

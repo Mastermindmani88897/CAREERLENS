@@ -2,9 +2,10 @@
 Matching API endpoints for Phase 19 Hybrid Matching Engine.
 
 Provides authenticated endpoints for:
+  - POST /matches/evaluate      Evaluate hybrid matches (batch or discovery, limit <= 100)
   - POST /matches/              Trigger hybrid match evaluation for one opportunity
-  - GET  /matches/              List all persisted matches for authenticated candidate
-  - GET  /matches/{match_id}   Retrieve a specific match by ID (ownership enforced)
+  - GET  /matches/              List all persisted matches for candidate (paginated)
+  - GET  /matches/{identifier}  Retrieve match by opportunity_id or match_id (ownership)
 
 Authentication: Bearer JWT required for all endpoints.
 Ownership: Candidates may only access their own match records.
@@ -28,6 +29,7 @@ from app.models.opportunity import Opportunity
 from app.models.tracking import Match
 from app.models.user import User
 from app.schemas.matching import (
+    MatchEvaluateRequest,
     MatchListResponse,
     MatchResponse,
     MatchSummaryResponse,
@@ -82,26 +84,113 @@ async def _resolve_opportunity(db: AsyncSession, opportunity_id: uuid.UUID) -> O
 
 async def _resolve_match_owned(
     db: AsyncSession,
-    match_id: uuid.UUID,
+    identifier: uuid.UUID,
     profile_id: uuid.UUID,
 ) -> Match:
     """
-    Fetch a Match by id; enforce that it belongs to the requesting candidate's profile.
-    Returns 404 for non-existent or unauthorized access (avoids oracle attacks).
+    Fetch a Match by opportunity_id or match_id; enforce candidate ownership.
+    Returns 404 with helpful detail if no match has been computed.
     """
-    stmt = select(Match).where(Match.id == match_id)
+    # 1. First check if identifier matches an opportunity_id for this profile
+    stmt = select(Match).where(
+        Match.opportunity_id == identifier,
+        Match.candidate_profile_id == profile_id,
+    )
     result = await db.execute(stmt)
     match: Match | None = result.scalar_one_or_none()
-    if match is None or match.candidate_profile_id != profile_id:
+
+    # 2. Fall back to match_id
+    if match is None:
+        stmt = select(Match).where(
+            Match.id == identifier,
+            Match.candidate_profile_id == profile_id,
+        )
+        result = await db.execute(stmt)
+        match = result.scalar_one_or_none()
+
+    if match is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Match {match_id} not found.",
+            detail=(
+                f"No match evaluation found for opportunity or match {identifier}. "
+                "Trigger evaluation via POST /api/v1/matches/evaluate or POST /api/v1/matches/."
+            ),
         )
     return match
 
 
 # ---------------------------------------------------------------------------
-# POST /matches/ — trigger hybrid match evaluation
+# POST /matches/evaluate — batch or discovery match evaluation
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/evaluate",
+    response_model=MatchListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Evaluate hybrid matches across opportunities (batch or active discovery)",
+    description=(
+        "Evaluates hybrid match scores across a specified list of opportunity_ids "
+        "or up to `limit` active opportunities (capped at 100). Persists each result idempotently."
+    ),
+)
+async def evaluate_matches(
+    payload: MatchEvaluateRequest,
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> MatchListResponse:
+    """Evaluate and persist hybrid matches across opportunities."""
+    profile = await _resolve_profile(db, current_user)
+    limit = min(payload.limit, 100)
+    sem_sim = payload.semantic_similarity or 0.0
+
+    if payload.opportunity_ids:
+        opp_ids = payload.opportunity_ids[:limit]
+        stmt = (
+            select(Opportunity)
+            .options(selectinload(Opportunity.skills))
+            .where(Opportunity.id.in_(opp_ids), Opportunity.is_active.is_(True))
+        )
+    else:
+        stmt = (
+            select(Opportunity)
+            .options(selectinload(Opportunity.skills))
+            .where(Opportunity.is_active.is_(True))
+            .order_by(Opportunity.created_at.desc())
+            .limit(limit)
+        )
+
+    result = await db.execute(stmt)
+    opps = result.scalars().all()
+
+    eval_matches: list[Match] = []
+    for opp in opps:
+        m = await compute_and_persist_match(
+            db=db,
+            profile=profile,
+            opportunity=opp,
+            semantic_similarity=sem_sim,
+            commit=False,
+        )
+        eval_matches.append(m)
+
+    await db.commit()
+    for m in eval_matches:
+        await db.refresh(m)
+
+    eval_matches.sort(key=lambda x: (x.final_score, x.computed_at), reverse=True)
+
+    return MatchListResponse(
+        items=[MatchSummaryResponse.model_validate(m) for m in eval_matches],
+        total=len(eval_matches),
+        page=1,
+        page_size=limit,
+        total_pages=1 if eval_matches else 0,
+    )
+
+
+# ---------------------------------------------------------------------------
+# POST /matches/ — trigger single hybrid match evaluation
 # ---------------------------------------------------------------------------
 
 
@@ -111,8 +200,8 @@ async def _resolve_match_owned(
     status_code=status.HTTP_200_OK,
     summary="Trigger hybrid match evaluation for one opportunity",
     description=(
-        "Compute and persist a six-factor hybrid match score between the authenticated "
-        "candidate's profile and the specified opportunity.  Idempotent: re-triggering "
+        "Compute and persist a hybrid match score between the authenticated "
+        "candidate's profile and the specified opportunity. Idempotent: re-triggering "
         "the same pair overwrites the previous result with refreshed scores."
     ),
 )
@@ -205,21 +294,21 @@ async def list_matches(
 
 
 # ---------------------------------------------------------------------------
-# GET /matches/{match_id} — retrieve a specific match
+# GET /matches/{identifier} — retrieve by opportunity_id or match_id
 # ---------------------------------------------------------------------------
 
 
 @router.get(
-    "/{match_id}",
+    "/{identifier}",
     response_model=MatchResponse,
-    summary="Retrieve a specific match by ID (ownership enforced)",
+    summary="Retrieve an existing match evaluation by opportunity_id or match_id",
 )
 async def get_match(
-    match_id: uuid.UUID,
+    identifier: uuid.UUID,
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> MatchResponse:
-    """Return full match details for the given match_id if it belongs to the requester."""
+    """Return full match details for the given opportunity_id or match_id if owned by candidate."""
     profile = await _resolve_profile(db, current_user)
-    match_record = await _resolve_match_owned(db, match_id, profile.id)
+    match_record = await _resolve_match_owned(db, identifier, profile.id)
     return MatchResponse.model_validate(match_record)

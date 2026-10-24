@@ -23,6 +23,7 @@ from app.schemas.candidate_profile import (
     SkillResponse,
 )
 from app.schemas.matching import (
+    MatchEvaluateRequest,
     MatchListResponse,
     MatchResponse,
     MatchSummaryResponse,
@@ -76,6 +77,7 @@ __all__ = [
     "ExtractedExperience",
     "ExtractedProject",
     "ExtractedSkill",
+    "MatchEvaluateRequest",
     "MatchListResponse",
     "MatchResponse",
     "MatchSummaryResponse",

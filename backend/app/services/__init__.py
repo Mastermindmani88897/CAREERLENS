@@ -13,8 +13,10 @@ from app.services.matching_service import (
     score_education,
     score_employment_type,
     score_experience,
+    score_location,
     score_location_work_mode,
     score_skill_overlap,
+    score_work_mode,
     upsert_match,
 )
 from app.services.opportunity_ingest_service import (
@@ -49,7 +51,9 @@ __all__ = [
     "score_education",
     "score_employment_type",
     "score_experience",
+    "score_location",
     "score_location_work_mode",
     "score_skill_overlap",
+    "score_work_mode",
     "upsert_match",
 ]

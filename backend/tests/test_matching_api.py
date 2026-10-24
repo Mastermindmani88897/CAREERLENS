@@ -285,10 +285,10 @@ class TestTriggerMatch:
         response = await async_client.post("/api/v1/matches/", json=payload, headers=headers)
         assert response.status_code == 200
         data = response.json()
-        # Normalized semantic score for input 0.0 → 0.5
+        # Approved formula: max(0, cosine) -> input 0.0 yields 0.0
         assert data["score_breakdown"]["semantic_similarity_raw"] == pytest.approx(0.0, abs=0.001)
         assert data["score_breakdown"]["semantic_similarity_normalized"] == pytest.approx(
-            0.5, abs=0.001
+            0.0, abs=0.001
         )
 
     async def test_nonexistent_opportunity_returns_404(
@@ -518,11 +518,85 @@ class TestGetMatchById:
         # Should be 404 (not 403, to avoid oracle leakage)
         assert response.status_code == 404
 
+    async def test_get_match_by_opportunity_id(
+        self,
+        async_client: AsyncClient,
+        user_with_profile: tuple[Any, dict],
+        active_opportunity: Opportunity,
+    ):
+        """Approved contract: GET /matches/{opportunity_id} retrieves match for that opportunity."""
+        _, headers = user_with_profile
+        # Trigger evaluation first
+        trigger_resp = await async_client.post(
+            "/api/v1/matches/",
+            json={"opportunity_id": str(active_opportunity.id)},
+            headers=headers,
+        )
+        assert trigger_resp.status_code == 200
+
+        # Retrieve by opportunity_id
+        response = await async_client.get(
+            f"/api/v1/matches/{active_opportunity.id}",
+            headers=headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["opportunity_id"] == str(active_opportunity.id)
+
     async def test_nonexistent_match_id_returns_404(
         self,
         async_client: AsyncClient,
         user_with_profile: tuple[Any, dict],
     ):
         _, headers = user_with_profile
-        response = await async_client.get(f"/api/v1/matches/{uuid.uuid4()}", headers=headers)
-        assert response.status_code == 404
+        target = uuid.uuid4()
+        response = await async_client.get(f"/api/v1/matches/{target}", headers=headers)
+        assert (
+            f"No match evaluation found for opportunity or match {target}"
+            in response.json()["detail"]
+        )
+
+
+# ---------------------------------------------------------------------------
+# SECTION 5: POST /matches/evaluate — batch evaluation
+# ---------------------------------------------------------------------------
+
+
+class TestEvaluateMatches:
+    async def test_evaluate_requested_opportunities(
+        self,
+        async_client: AsyncClient,
+        user_with_profile: tuple[Any, dict],
+        active_opportunity: Opportunity,
+    ):
+        _, headers = user_with_profile
+        response = await async_client.post(
+            "/api/v1/matches/evaluate",
+            json={
+                "opportunity_ids": [str(active_opportunity.id)],
+                "limit": 10,
+                "semantic_similarity": 0.75,
+            },
+            headers=headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] >= 1
+        assert any(item["opportunity_id"] == str(active_opportunity.id) for item in data["items"])
+
+    async def test_evaluate_active_discovery(
+        self,
+        async_client: AsyncClient,
+        user_with_profile: tuple[Any, dict],
+        active_opportunity: Opportunity,
+    ):
+        """When opportunity_ids is omitted, evaluates active opportunities up to limit."""
+        _, headers = user_with_profile
+        response = await async_client.post(
+            "/api/v1/matches/evaluate",
+            json={"limit": 5},
+            headers=headers,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data["items"], list)
