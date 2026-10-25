@@ -67,7 +67,7 @@ jobs:
       - name: Initialize pgvector extension and least-privilege application user
         run: |
           PGPASSWORD=test_ci_password_123 psql -h localhost -U postgres -d careerlens_test -c "CREATE EXTENSION IF NOT EXISTS vector;"
-          PGPASSWORD=test_ci_password_123 psql -h localhost -U postgres -d careerlens_test -c "CREATE ROLE careerlens_user WITH LOGIN PASSWORD 'test_ci_password_123' NOCREATEDB NOSUPERUSER NOCREATEROLE;"
+          PGPASSWORD=test_ci_password_123 psql -h localhost -U postgres -d careerlens_test -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'careerlens_user') THEN CREATE ROLE careerlens_user WITH LOGIN PASSWORD 'test_ci_password_123'; END IF; ALTER ROLE careerlens_user WITH LOGIN NOCREATEDB NOSUPERUSER NOCREATEROLE; END \$\$;"
           PGPASSWORD=test_ci_password_123 psql -h localhost -U postgres -d careerlens_test -c "GRANT ALL PRIVILEGES ON DATABASE careerlens_test TO careerlens_user;"
           PGPASSWORD=test_ci_password_123 psql -h localhost -U postgres -d careerlens_test -c "ALTER DATABASE careerlens_test OWNER TO careerlens_user;"
           PGPASSWORD=test_ci_password_123 psql -h localhost -U postgres -d careerlens_test -c "GRANT ALL ON SCHEMA public TO careerlens_user;"

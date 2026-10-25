@@ -20,7 +20,9 @@ ENV_EXAMPLE = ROOT_DIR / ".env.example"
 
 
 async def main() -> None:
-    superuser_password = os.environ.get("PGPASSWORD") or os.environ.get("POSTGRES_PASSWORD")
+    superuser_password = os.environ.get("PGPASSWORD") or os.environ.get(
+        "POSTGRES_PASSWORD"
+    )
     scratch_file = (
         Path(os.environ.get("USERPROFILE", ""))
         / ".gemini"
@@ -82,7 +84,9 @@ async def main() -> None:
 
     try:
         # Check/create role
-        role_exists = await sys_conn.fetchval("SELECT 1 FROM pg_roles WHERE rolname = $1", db_user)
+        role_exists = await sys_conn.fetchval(
+            "SELECT 1 FROM pg_roles WHERE rolname = $1", db_user
+        )
         if not role_exists:
             # DDL does not allow parameterized role creation directly for role name/password
             # We use an anonymous code block to pass the password safely
@@ -91,7 +95,7 @@ async def main() -> None:
                 DO $role$
                 BEGIN
                     IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'careerlens_user') THEN
-                        CREATE ROLE careerlens_user WITH LOGIN;
+                        CREATE ROLE careerlens_user WITH LOGIN NOCREATEDB NOSUPERUSER NOCREATEROLE;
                     END IF;
                 END
                 $role$;
@@ -101,9 +105,13 @@ async def main() -> None:
         else:
             print(f"Role '{db_user}' already exists.")
 
-        # Ensure least-privilege role attributes (remove CREATEDB if present)
-        await sys_conn.execute(f"ALTER ROLE {db_user} NOCREATEDB;")
-        print(f"Role '{db_user}' configured with least-privilege (NOCREATEDB).")
+        # Ensure strict least-privilege role attributes (NOCREATEDB, NOSUPERUSER, NOCREATEROLE)
+        await sys_conn.execute(
+            f"ALTER ROLE {db_user} WITH LOGIN NOCREATEDB NOSUPERUSER NOCREATEROLE;"
+        )
+        print(
+            f"Role '{db_user}' configured with least-privilege (NOCREATEDB, NOSUPERUSER, NOCREATEROLE)."
+        )
 
         # Update password securely via format with sanitized token.
         # token_urlsafe contains only url-safe base64 [a-zA-Z0-9_-], no SQL injection possible.
@@ -120,7 +128,9 @@ async def main() -> None:
                 await sys_conn.execute(f'CREATE DATABASE "{db_name}" OWNER {db_user};')
                 print(f"Database '{db_name}' created.")
             else:
-                await sys_conn.execute(f'ALTER DATABASE "{db_name}" OWNER TO {db_user};')
+                await sys_conn.execute(
+                    f'ALTER DATABASE "{db_name}" OWNER TO {db_user};'
+                )
                 print(f"Database '{db_name}' already exists.")
     finally:
         await sys_conn.close()
@@ -136,7 +146,9 @@ async def main() -> None:
         )
         try:
             await db_conn.execute("CREATE EXTENSION IF NOT EXISTS vector;")
-            await db_conn.execute(f'GRANT ALL PRIVILEGES ON DATABASE "{db_name}" TO {db_user};')
+            await db_conn.execute(
+                f'GRANT ALL PRIVILEGES ON DATABASE "{db_name}" TO {db_user};'
+            )
             await db_conn.execute(f"GRANT ALL ON SCHEMA public TO {db_user};")
             ext_version = await db_conn.fetchval(
                 "SELECT extversion FROM pg_extension WHERE extname = 'vector';"
@@ -154,8 +166,12 @@ async def main() -> None:
         env_content = ""
 
     # Replace placeholders
-    main_url = f"postgresql+asyncpg://{db_user}:{app_db_password}@{host}:{port}/{main_db}"
-    test_url = f"postgresql+asyncpg://{db_user}:{app_db_password}@{host}:{port}/{test_db}"
+    main_url = (
+        f"postgresql+asyncpg://{db_user}:{app_db_password}@{host}:{port}/{main_db}"
+    )
+    test_url = (
+        f"postgresql+asyncpg://{db_user}:{app_db_password}@{host}:{port}/{test_db}"
+    )
 
     if "DATABASE_URL=" in env_content:
         env_content = re.sub(
@@ -205,7 +221,9 @@ async def main() -> None:
     )
     try:
         val = await app_conn.fetchval("SELECT '[1,2,3]'::vector <-> '[3,2,1]'::vector;")
-        print(f"Verified application user connection and vector math: distance = {val:.4f}")
+        print(
+            f"Verified application user connection and vector math: distance = {val:.4f}"
+        )
     finally:
         await app_conn.close()
 
