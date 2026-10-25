@@ -34,8 +34,12 @@ CareerLens development is organized into three major milestone horizons:
    - Phase 21: Application tracking and status transition frontend — **COMPLETE**
    - Phase 22: End-to-end integration and user acceptance testing — **COMPLETE**
    - Phase 23: Performance optimization, caching, and database tuning — **COMPLETE**
-   - Phase 24: Deployment configuration, Docker containerization, and CI/CD — **IMPLEMENTATION COMPLETE** *(Runtime deployment verification pending host Docker availability / CI test resolution)*
+   - Phase 24: Deployment configuration, Docker containerization, and CI/CD — **IMPLEMENTATION COMPLETE** *(Containerized configuration, quality gates, and CI least-privilege fix complete; runtime host verification pending Docker engine)*
    - Phase 25: Final academic project defense documentation and handover ← **NEXT**
+
+4. **Horizon 4: Autonomous Sourcing & Form Automation Milestone (Phases 26–27)** — **SCHEDULED (MANDATORY)**
+   - Phase 26: Multi-platform opportunity collection and resilient web scraping (jobs, internships, hackathons, coding contests) — **MANDATORY CORE REQUIREMENT**
+   - Phase 27: Automated external application form filling and user-confirmed submission workflow — **MANDATORY CORE REQUIREMENT**
 
 ---
 
@@ -66,8 +70,10 @@ CareerLens development is organized into three major milestone horizons:
 | **Phase 21** | Application Tracking & Status Transition Frontend | **COMPLETE** | `a058bfc` |
 | **Phase 22** | End-to-End Integration & User Acceptance Testing | **COMPLETE** | `436165e` |
 | **Phase 23** | Performance Optimization, Caching & Database Tuning | **COMPLETE** | `2c25293` |
-| **Phase 24** | Deployment Configuration, Docker Containerization & CI/CD | **IMPLEMENTATION COMPLETE** *(Runtime Verification Pending)* | `15e7c04` |
+| **Phase 24** | Deployment Configuration, Docker Containerization & CI/CD | **IMPLEMENTATION COMPLETE** *(Runtime Verification Pending Host Docker)* | `15e7c04` |
 | **Phase 25** | Final Academic Project Defense Documentation & Handover | **NEXT** | Scheduled |
+| **Phase 26** | Multi-Platform Opportunity Collection & Resilient Web Scraping | **SCHEDULED** *(Mandatory)* | Post-Phase 25 |
+| **Phase 27** | Automated External Application Form Filling & User Confirmation | **SCHEDULED** *(Mandatory)* | Post-Phase 26 |
 
 ---
 
@@ -89,19 +95,24 @@ The 30% Foundation Milestone represents the verified structural, relational, arc
 
 ## 4. Phase 24 Deployment Verification Audit & Core Requirements Status
 
-### A. Deployment Verification vs. Implementation Status
+### A. Deployment Verification & CI Failure Resolution
 - **Implementation Complete (`15e7c04`)**:
   - `backend/Dockerfile`: Multi-stage build with non-root user (`careerlens`, UID 10001), offline pre-cached MiniLM embeddings, and container healthcheck.
   - `frontend/Dockerfile`: Multi-stage build with Node 20 build and Nginx 1.27 Alpine runtime with healthcheck.
   - `docker-compose.yml` & `compose.yaml`: Coordinated multi-container stack (`db`, `migration`, `backend`, `frontend`) with network isolation, healthcheck dependencies, and controlled one-off migration execution.
   - `frontend/nginx.conf`: Static SPA serving, reverse proxy for `/api/` and docs, security headers, and gzip compression.
   - Production security validation: Startup checks enforce `DEBUG=false`, `JWT_SECRET_KEY` length >= 32 characters, non-placeholder database credentials, and reject wildcard CORS origins.
-- **Runtime Deployment Verification (Limitation Unresolved)**:
+- **CI Failure Diagnosis & Verified Fix**:
+  - **Identified Failure**: In GitHub Actions workflow runs `40087898942` and `40167750975`, `backend-ci` failed at `Execute Pytest Suite` on `tests/test_database.py::test_careerlens_user_least_privilege` (`AssertionError: Least privilege violated: CREATEDB must be False`, `assert True is False`).
+  - **Root Cause**: The standard `pgvector/pgvector:pg16` Docker service container initializes `POSTGRES_USER: careerlens_user` with default `SUPERUSER` and `CREATEDB` privileges. While extension creation succeeded, `careerlens_user` was never demoted to least privilege. Consequently, the least-privilege security assertion (`row["rolcreatedb"] is False`) failed in CI despite passing on the Windows host (where the role was created manually without `CREATEDB`).
+  - **Resolution Applied**:
+    1. Updated `.github/workflows/ci.yml` step to demote the test role:
+       `ALTER ROLE careerlens_user NOCREATEDB NOSUPERUSER NOCREATEROLE;` immediately following vector extension creation.
+    2. Updated `docker/postgres/init-pgvector.sql` to enforce least privilege during container cluster boot:
+       `ALTER ROLE CURRENT_USER NOCREATEDB NOSUPERUSER NOCREATEROLE;`.
+- **Runtime Deployment Verification (Limitation Unresolved on Host)**:
   - **Host Environment**: Docker engine is not available on the current Windows development host (`docker: command not found`). Runtime container boot, pgvector initialization in container, and live Nginx proxy testing cannot be verified locally.
-  - **Remote CI Pipeline**: GitHub Actions workflow run `40087898942` on commit `da7a024` executed:
-    - `Frontend Lint, Type-Check, Tests & Build`: **SUCCESS**
-    - `Docker Build & Compose Config Validation`: **SUCCESS**
-    - `Backend Lint, Security & Tests`: **FAILURE** (step `Execute Pytest Suite` failed in CI container environment, despite all 348 pytest tests passing locally on the host).
+  - **Remote CI Pipeline**: Following commit and push, GitHub Actions CI will re-execute the test suite with the least-privilege fix in place.
 
 ### B. PostgreSQL Deployment Version Compatibility
 - **Supported Deployment Target**: PostgreSQL 16 LTS via `pgvector/pgvector:pg16` in Docker Compose and CI configurations.
@@ -113,6 +124,36 @@ The 30% Foundation Milestone represents the verified structural, relational, arc
 - **Single-Worker Requirement**: Cache state is local to each Python process. The deployment assumes a single Uvicorn worker per container. Multi-worker scaling or clustered replicas require migrating to a distributed cache store (Redis/KeyDB) to ensure instantaneous cross-worker cache invalidation.
 
 ### D. Automated External Application Form Filling Status
-- **Core Requirement Explicit Status**: Automated external application form filling (e.g., browser extensions, automated ATS form DOM autofill, or external web submission bots) is **NOT IMPLEMENTED** in this repository.
-- **Implemented Scope**: The repository implements internal opportunity discovery, semantic recommendations, hybrid eligibility matching, and internal candidate application tracking lifecycle (saved -> applied -> interviewing -> offered -> rejected/withdrawn) with audit logging. External autofill automation remains an unfulfilled requirement and is not verified.
+- **Core Requirement Explicit Status**: Automated external application form filling (e.g., browser extensions, automated ATS form DOM autofill, or external web submission bots) is **NOT IMPLEMENTED** in the current Phase 1–24 repository.
+- **Implemented Scope**: The repository implements internal opportunity discovery, semantic recommendations, hybrid eligibility matching, and internal candidate application tracking lifecycle (saved -> applied -> interviewing -> offered -> rejected/withdrawn) with audit logging.
+- **Mandatory Roadmap Scheduling**: Because automated external application form filling is a mandatory core requirement of CareerLens, it is formally scheduled as **Phase 27** in Horizon 4.
+
+### E. Next Phase — Phase 25: Final Academic Project Defense Documentation & Handover
+- **Objective**: Consolidate the complete Phase 1–24 implementation into defense-ready architectural documentation, operational manuals, and project handover artifacts.
+- **Acceptance Criteria**:
+  1. Complete system architecture document incorporating data models, vector search, hybrid matching formula, security boundaries, and container topology.
+  2. Complete API catalog documenting all REST endpoints, request/response schemas, and error structures.
+  3. Operations manual detailing setup, configuration, database management, backup/restore, and deployment troubleshooting.
+  4. Academic defense presentation materials, live demonstration script, and project evaluation metrics report.
+  5. Zero regressions across all host quality gates (348 backend tests, 113 frontend tests, linting, formatting, security scans, type checking, and production builds).
+
+### F. Mandatory Horizon 4 Core Requirements Architecture & Acceptance Criteria
+
+#### Phase 26: Multi-Platform Opportunity Collection & Resilient Web Scraping
+- **Core Requirement**: CareerLens must automatically aggregate opportunities across jobs, internships, hackathons, and coding contests from multiple heterogeneous platforms.
+- **Architectural Specifications & Acceptance Criteria**:
+  1. **Dual Ingestion Engine**:
+     - Official APIs & Authorized Feeds: Connector modules for structured platforms using authenticated API keys/tokens managed securely via environment variables.
+     - Permitted Web Scraping: Source-specific scrapers using BeautifulSoup/Playwright adhering to platform robots.txt, terms, and rate limits.
+  2. **Multi-Category Coverage**: Connectors for employment (jobs/internships) and competitive learning (hackathons, competitive programming contests).
+  3. **Robust Data Pipeline**: Schema normalization into standard `Opportunity` models, validation, deduplication via `(source, source_id)` and fuzzy title/company matching, expiration handling, cursor pagination, exponential backoff retries, and scheduled background refresh.
+  4. **Source Transparency**: Explicit source attribution, connector-isolated test suites, and graceful degradation/reporting for credential-gated or rate-limited sources.
+
+#### Phase 27: Automated External Application Form Filling & User-Confirmed Submission
+- **Core Requirement**: CareerLens must assist candidates by automatically filling supported external job application forms using verified profile and resume data, subject to strict user review and explicit confirmation.
+- **Architectural Specifications & Acceptance Criteria**:
+  1. **Autofill Engine**: Browser extension or automated browser agent (Playwright) capable of detecting standard ATS form fields (Workday, Greenhouse, Lever, Taleo) and mapping candidate profile/resume data (contact, education, skills, experience, portfolio links).
+  2. **User In-the-Loop Review**: Compulsory interactive preview modal displaying populated fields for candidate verification, modification, and explicit manual confirmation prior to form submission.
+  3. **Verified Submission & Outcome Tracking**: Automated post-submission receipt detection, verification of submission success, and seamless status transition in the internal `applications` tracking system from `saved` to `applied` with audit timestamp and platform reference.
+
 

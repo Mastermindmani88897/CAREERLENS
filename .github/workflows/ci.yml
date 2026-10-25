@@ -64,9 +64,10 @@ jobs:
           cd backend
           bandit -r app alembic -ll
 
-      - name: Initialize pgvector extension
+      - name: Initialize pgvector extension and enforce least privilege
         run: |
           PGPASSWORD=test_ci_password_123 psql -h localhost -U careerlens_user -d careerlens_test -c "CREATE EXTENSION IF NOT EXISTS vector;"
+          PGPASSWORD=test_ci_password_123 psql -h localhost -U careerlens_user -d careerlens_test -c "ALTER ROLE careerlens_user NOCREATEDB NOSUPERUSER NOCREATEROLE;"
 
       - name: Run Alembic Database Migrations
         env:
