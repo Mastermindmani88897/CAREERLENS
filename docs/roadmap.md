@@ -34,7 +34,7 @@ CareerLens development is organized into three major milestone horizons:
    - Phase 21: Application tracking and status transition frontend — **COMPLETE**
    - Phase 22: End-to-end integration and user acceptance testing — **COMPLETE**
    - Phase 23: Performance optimization, caching, and database tuning — **COMPLETE**
-   - Phase 24: Deployment configuration, Docker containerization, and CI/CD — **COMPLETE**
+   - Phase 24: Deployment configuration, Docker containerization, and CI/CD — **IMPLEMENTATION COMPLETE** *(Runtime deployment verification pending host Docker availability / CI test resolution)*
    - Phase 25: Final academic project defense documentation and handover ← **NEXT**
 
 ---
@@ -66,7 +66,7 @@ CareerLens development is organized into three major milestone horizons:
 | **Phase 21** | Application Tracking & Status Transition Frontend | **COMPLETE** | `a058bfc` |
 | **Phase 22** | End-to-End Integration & User Acceptance Testing | **COMPLETE** | `436165e` |
 | **Phase 23** | Performance Optimization, Caching & Database Tuning | **COMPLETE** | `2c25293` |
-| **Phase 24** | Deployment Configuration, Docker Containerization & CI/CD | **COMPLETE** | `15e7c04` |
+| **Phase 24** | Deployment Configuration, Docker Containerization & CI/CD | **IMPLEMENTATION COMPLETE** *(Runtime Verification Pending)* | `15e7c04` |
 | **Phase 25** | Final Academic Project Defense Documentation & Handover | **NEXT** | Scheduled |
 
 ---
@@ -84,3 +84,35 @@ The 30% Foundation Milestone represents the verified structural, relational, arc
 - **LLM Integrations**: No active API calls to Gemini or OpenAI.
 - **Interview Preparation**: No dynamic LLM prompt generation or interview quiz synthesis.
 - **Browser Automation / E2E**: No Playwright/Cypress end-to-end browser test suites.
+
+---
+
+## 4. Phase 24 Deployment Verification Audit & Core Requirements Status
+
+### A. Deployment Verification vs. Implementation Status
+- **Implementation Complete (`15e7c04`)**:
+  - `backend/Dockerfile`: Multi-stage build with non-root user (`careerlens`, UID 10001), offline pre-cached MiniLM embeddings, and container healthcheck.
+  - `frontend/Dockerfile`: Multi-stage build with Node 20 build and Nginx 1.27 Alpine runtime with healthcheck.
+  - `docker-compose.yml` & `compose.yaml`: Coordinated multi-container stack (`db`, `migration`, `backend`, `frontend`) with network isolation, healthcheck dependencies, and controlled one-off migration execution.
+  - `frontend/nginx.conf`: Static SPA serving, reverse proxy for `/api/` and docs, security headers, and gzip compression.
+  - Production security validation: Startup checks enforce `DEBUG=false`, `JWT_SECRET_KEY` length >= 32 characters, non-placeholder database credentials, and reject wildcard CORS origins.
+- **Runtime Deployment Verification (Limitation Unresolved)**:
+  - **Host Environment**: Docker engine is not available on the current Windows development host (`docker: command not found`). Runtime container boot, pgvector initialization in container, and live Nginx proxy testing cannot be verified locally.
+  - **Remote CI Pipeline**: GitHub Actions workflow run `40087898942` on commit `da7a024` executed:
+    - `Frontend Lint, Type-Check, Tests & Build`: **SUCCESS**
+    - `Docker Build & Compose Config Validation`: **SUCCESS**
+    - `Backend Lint, Security & Tests`: **FAILURE** (step `Execute Pytest Suite` failed in CI container environment, despite all 348 pytest tests passing locally on the host).
+
+### B. PostgreSQL Deployment Version Compatibility
+- **Supported Deployment Target**: PostgreSQL 16 LTS via `pgvector/pgvector:pg16` in Docker Compose and CI configurations.
+- **Development Host Version**: PostgreSQL 18.x locally.
+- **Compatibility**: Verified schema definitions, pgvector vector operations, and Alembic migrations execute cleanly across both PostgreSQL 16 and 18 without syntax or dialect incompatibilities.
+
+### C. In-Memory Caching & Single-Worker Deployment Assumption
+- `backend/app/core/cache.py` implements an in-process, asynchronous LRU cache with monotonic TTL.
+- **Single-Worker Requirement**: Cache state is local to each Python process. The deployment assumes a single Uvicorn worker per container. Multi-worker scaling or clustered replicas require migrating to a distributed cache store (Redis/KeyDB) to ensure instantaneous cross-worker cache invalidation.
+
+### D. Automated External Application Form Filling Status
+- **Core Requirement Explicit Status**: Automated external application form filling (e.g., browser extensions, automated ATS form DOM autofill, or external web submission bots) is **NOT IMPLEMENTED** in this repository.
+- **Implemented Scope**: The repository implements internal opportunity discovery, semantic recommendations, hybrid eligibility matching, and internal candidate application tracking lifecycle (saved -> applied -> interviewing -> offered -> rejected/withdrawn) with audit logging. External autofill automation remains an unfulfilled requirement and is not verified.
+
