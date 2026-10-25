@@ -34,7 +34,7 @@ CareerLens development is organized into three major milestone horizons:
    - Phase 21: Application tracking and status transition frontend — **COMPLETE**
    - Phase 22: End-to-end integration and user acceptance testing — **COMPLETE**
    - Phase 23: Performance optimization, caching, and database tuning — **COMPLETE**
-   - Phase 24: Deployment configuration, Docker containerization, and CI/CD — **IMPLEMENTATION COMPLETE** *(Containerized configuration, quality gates, and CI least-privilege fix complete; runtime host verification pending Docker engine)*
+   - Phase 24: Deployment configuration, Docker containerization, and CI/CD — **COMPLETE** *(CI pipeline verified with 100% passing tests on commit `9dbe0c9`; host runtime container verification pending host Docker availability)*
    - Phase 25: Final academic project defense documentation and handover ← **NEXT**
 
 4. **Horizon 4: Autonomous Sourcing & Form Automation Milestone (Phases 26–27)** — **SCHEDULED (MANDATORY)**
@@ -70,7 +70,7 @@ CareerLens development is organized into three major milestone horizons:
 | **Phase 21** | Application Tracking & Status Transition Frontend | **COMPLETE** | `a058bfc` |
 | **Phase 22** | End-to-End Integration & User Acceptance Testing | **COMPLETE** | `436165e` |
 | **Phase 23** | Performance Optimization, Caching & Database Tuning | **COMPLETE** | `2c25293` |
-| **Phase 24** | Deployment Configuration, Docker Containerization & CI/CD | **IMPLEMENTATION COMPLETE** *(Runtime Verification Pending Host Docker)* | `15e7c04` |
+| **Phase 24** | Deployment Configuration, Docker Containerization & CI/CD | **COMPLETE (CI Verified)** | `9dbe0c9` |
 | **Phase 25** | Final Academic Project Defense Documentation & Handover | **NEXT** | Scheduled |
 | **Phase 26** | Multi-Platform Opportunity Collection & Resilient Web Scraping | **SCHEDULED** *(Mandatory)* | Post-Phase 25 |
 | **Phase 27** | Automated External Application Form Filling & User Confirmation | **SCHEDULED** *(Mandatory)* | Post-Phase 26 |
@@ -104,15 +104,16 @@ The 30% Foundation Milestone represents the verified structural, relational, arc
   - Production security validation: Startup checks enforce `DEBUG=false`, `JWT_SECRET_KEY` length >= 32 characters, non-placeholder database credentials, and reject wildcard CORS origins.
 - **CI Failure Diagnosis & Verified Fix**:
   - **Identified Failure**: In GitHub Actions workflow runs `40087898942` and `40167750975`, `backend-ci` failed at `Execute Pytest Suite` on `tests/test_database.py::test_careerlens_user_least_privilege` (`AssertionError: Least privilege violated: CREATEDB must be False`, `assert True is False`).
-  - **Root Cause**: The standard `pgvector/pgvector:pg16` Docker service container initializes `POSTGRES_USER: careerlens_user` with default `SUPERUSER` and `CREATEDB` privileges. While extension creation succeeded, `careerlens_user` was never demoted to least privilege. Consequently, the least-privilege security assertion (`row["rolcreatedb"] is False`) failed in CI despite passing on the Windows host (where the role was created manually without `CREATEDB`).
+  - **Root Cause**: The standard `pgvector/pgvector:pg16` Docker service container initializes `POSTGRES_USER: careerlens_user` as the cluster's bootstrap superuser (`SUPERUSER`, `CREATEDB`). In PostgreSQL, a bootstrap user cannot revoke its own `SUPERUSER` attribute (`DETAIL: The bootstrap user must have the SUPERUSER attribute`).
   - **Resolution Applied**:
-    1. Updated `.github/workflows/ci.yml` step to demote the test role:
-       `ALTER ROLE careerlens_user NOCREATEDB NOSUPERUSER NOCREATEROLE;` immediately following vector extension creation.
-    2. Updated `docker/postgres/init-pgvector.sql` to enforce least privilege during container cluster boot:
-       `ALTER ROLE CURRENT_USER NOCREATEDB NOSUPERUSER NOCREATEROLE;`.
-- **Runtime Deployment Verification (Limitation Unresolved on Host)**:
-  - **Host Environment**: Docker engine is not available on the current Windows development host (`docker: command not found`). Runtime container boot, pgvector initialization in container, and live Nginx proxy testing cannot be verified locally.
-  - **Remote CI Pipeline**: Following commit and push, GitHub Actions CI will re-execute the test suite with the least-privilege fix in place.
+    1. Reconfigured `.github/workflows/ci.yml` `postgres` service container to use standard bootstrap user `postgres` (`POSTGRES_USER: postgres`).
+    2. Updated initialization step to connect as `postgres`, initialize pgvector extension, and create an isolated application role `careerlens_user` with `NOCREATEDB NOSUPERUSER NOCREATEROLE`, transferring database and schema ownership to `careerlens_user`.
+  - **Verified Result**: Remote GitHub Actions workflow run `40174988958` on commit `9dbe0c9` completed with **`success`** across all three jobs:
+    - `Backend Lint, Security & Tests`: **SUCCESS** (All 348 pytest tests passing including least-privilege role assertions)
+    - `Frontend Lint, Type-Check, Tests & Build`: **SUCCESS**
+    - `Docker Build & Compose Config Validation`: **SUCCESS**
+- **Runtime Deployment Verification (Host Limitation)**:
+  - **Host Environment**: Docker engine is not available on the current Windows development host (`docker: command not found`). Runtime container boot and live Nginx proxy testing cannot be verified locally on the host; container builds and Compose validation are verified in CI.
 
 ### B. PostgreSQL Deployment Version Compatibility
 - **Supported Deployment Target**: PostgreSQL 16 LTS via `pgvector/pgvector:pg16` in Docker Compose and CI configurations.
