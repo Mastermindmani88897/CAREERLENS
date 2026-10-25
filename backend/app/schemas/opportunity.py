@@ -56,6 +56,14 @@ class RawOpportunityRow(BaseModel):
     required_skills: list[str] | str | None = None
     preferred_skills: list[str] | str | None = None
     is_active: bool | str | None = True
+    event_start_time: str | datetime | None = None
+    event_end_time: str | datetime | None = None
+    registration_deadline: str | date | None = None
+    duration_seconds: int | str | None = None
+    prize_summary: str | None = None
+    first_seen_at: datetime | None = None
+    last_seen_at: datetime | None = None
+    external_metadata: dict[str, Any] | None = None
 
     model_config = ConfigDict(extra="ignore")
 
@@ -86,6 +94,14 @@ class OpportunityBase(BaseModel):
     required_skills: list[str] | None = None
     preferred_skills: list[str] | None = None
     is_active: bool = True
+    event_start_time: datetime | None = None
+    event_end_time: datetime | None = None
+    registration_deadline: date | None = None
+    duration_seconds: int | None = Field(None, ge=0)
+    prize_summary: str | None = None
+    first_seen_at: datetime | None = None
+    last_seen_at: datetime | None = None
+    external_metadata: dict[str, Any] | None = None
 
     @field_validator("job_url")
     @classmethod
@@ -132,6 +148,14 @@ class OpportunityUpdate(BaseModel):
     required_skills: list[str] | None = None
     preferred_skills: list[str] | None = None
     is_active: bool | None = None
+    event_start_time: datetime | None = None
+    event_end_time: datetime | None = None
+    registration_deadline: date | None = None
+    duration_seconds: int | None = Field(None, ge=0)
+    prize_summary: str | None = None
+    first_seen_at: datetime | None = None
+    last_seen_at: datetime | None = None
+    external_metadata: dict[str, Any] | None = None
 
     @field_validator("job_url")
     @classmethod

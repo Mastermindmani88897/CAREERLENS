@@ -3,7 +3,7 @@
  * Mirrors backend Opportunity models, responses, and search/filter parameters.
  */
 
-export type OpportunityType = 'job' | 'internship' | 'hackathon'
+export type OpportunityType = 'job' | 'internship' | 'hackathon' | 'coding_contest'
 export type WorkMode = 'remote' | 'hybrid' | 'onsite' | 'any'
 export type EmploymentType = 'fulltime' | 'parttime' | 'internship' | 'contract' | 'any'
 export type EducationLevel = 'none' | 'diploma' | 'bachelor' | 'master' | 'phd' | 'any'

@@ -12,6 +12,7 @@ from app.models.candidate import (
     Resume,
     Skill,
 )
+from app.models.connector import ConnectorSyncStatus
 from app.models.enums import (
     ApplicationStatus,
     EducationLevel,
@@ -43,9 +44,10 @@ __all__ = [
     "Experience",
     "Project",
     "Certification",
-    # Entities (Phase 6: Opportunity & Tracking)
+    # Entities (Phase 6 & 26: Opportunity & Tracking & Connectors)
     "Opportunity",
     "OpportunitySkill",
+    "ConnectorSyncStatus",
     "Match",
     "Application",
     "ApplicationStatusHistory",

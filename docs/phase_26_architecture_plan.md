@@ -376,13 +376,14 @@ CareerLens currently runs as a single Uvicorn worker per container with an in-pr
 │ Sub-Phase   │ Scope & Deliverables                                     │
 ├─────────────┼──────────────────────────────────────────────────────────┤
 │ Phase 26.1  │ Architecture Audit, Source Feasibility Matrix, Schema    │
-│ (CURRENT)   │ Plan, and Execution Blueprint (docs/phase_26_plan.md)    │
+│ (COMPLETE)  │ Plan, and Execution Blueprint (docs/phase_26_plan.md)    │
 ├─────────────┼──────────────────────────────────────────────────────────┤
 │ Phase 26.2  │ Database Migration & Foundation: Schema additions for    │
-│             │ coding contests, sources, event dates, and sync status   │
+│ (COMPLETE)  │ coding contests, sources, event dates, and sync status   │
+│             │ (Alembic rev a2b3c4d5e6f7, 358 backend tests passing)    │
 ├─────────────┼──────────────────────────────────────────────────────────┤
 │ Phase 26.3  │ Wave 1 Connectors (Zero-Credential Public APIs):         │
-│             │ Remotive, Arbeitnow, Codeforces, and Greenhouse Boards   │
+│ (NEXT)      │ Remotive, Arbeitnow, Codeforces, and Greenhouse Boards   │
 ├─────────────┼──────────────────────────────────────────────────────────┤
 │ Phase 26.4  │ Wave 2 Connectors (Developer Key & Feed Integrations):   │
 │             │ Adzuna, USAJOBS, Lever, Remote OK                        │

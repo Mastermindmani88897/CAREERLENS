@@ -25,6 +25,7 @@ from app.services.opportunity_normalizer import (
     normalize_url,
     normalize_work_mode,
     parse_flexible_date,
+    parse_flexible_datetime,
     parse_location_string,
     sanitize_text,
 )
@@ -164,6 +165,12 @@ def parse_csv_to_raw_rows(csv_text: str) -> list[RawOpportunityRow]:
                 required_skills=req_skills,
                 preferred_skills=pref_skills,
                 is_active=norm_row.get("is_active", True),
+                event_start_time=norm_row.get("event_start_time") or norm_row.get("start_time"),
+                event_end_time=norm_row.get("event_end_time") or norm_row.get("end_time"),
+                registration_deadline=norm_row.get("registration_deadline"),
+                duration_seconds=norm_row.get("duration_seconds") or norm_row.get("duration"),
+                prize_summary=norm_row.get("prize_summary") or norm_row.get("prize"),
+                external_metadata=norm_row.get("external_metadata"),
             )
         )
 
@@ -239,6 +246,12 @@ async def ingest_raw_records(
             # Date normalization
             deadline = parse_flexible_date(raw.application_deadline)
             posted_date = parse_flexible_date(raw.posted_date)
+            reg_deadline = parse_flexible_date(raw.registration_deadline)
+            event_start = parse_flexible_datetime(raw.event_start_time)
+            event_end = parse_flexible_datetime(raw.event_end_time)
+            duration_secs = normalize_numeric_int(raw.duration_seconds)
+            prize = sanitize_text(raw.prize_summary) or None
+            ext_meta = raw.external_metadata if isinstance(raw.external_metadata, dict) else {}
 
             # URL normalization
             raw_url = raw.job_url or raw.application_url
@@ -303,6 +316,12 @@ async def ingest_raw_records(
                     source_id=source_id,
                     posted_date=posted_date,
                     is_active=is_active,
+                    event_start_time=event_start,
+                    event_end_time=event_end,
+                    registration_deadline=reg_deadline,
+                    duration_seconds=duration_secs,
+                    prize_summary=prize,
+                    external_metadata=ext_meta,
                 )
                 db.add(opp)
                 await db.flush()

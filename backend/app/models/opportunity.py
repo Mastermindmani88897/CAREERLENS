@@ -22,7 +22,7 @@ from sqlalchemy import (
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -61,6 +61,8 @@ class Opportunity(Base):
         Index("opportunities_employment_type_idx", "employment_type"),
         Index("opportunities_work_mode_idx", "work_mode"),
         Index("opportunities_active_created_idx", "is_active", text("created_at DESC")),
+        Index("opportunities_last_seen_idx", "last_seen_at"),
+        Index("opportunities_event_start_idx", "event_start_time"),
         Index(
             "opportunities_job_embedding_hnsw_idx",
             "job_embedding",
@@ -153,6 +155,7 @@ class Opportunity(Base):
             create_type=False,
         ),
         nullable=False,
+        default=EmploymentType.FULLTIME,
     )
     salary_min: Mapped[int | None] = mapped_column(
         Integer,
@@ -203,6 +206,41 @@ class Opportunity(Base):
     embedding_updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
+    )
+    event_start_time: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    event_end_time: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    registration_deadline: Mapped[date | None] = mapped_column(
+        Date,
+        nullable=True,
+    )
+    duration_seconds: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+    )
+    prize_summary: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+    first_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    external_metadata: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB,
+        nullable=True,
+        server_default=text("'{}'::jsonb"),
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

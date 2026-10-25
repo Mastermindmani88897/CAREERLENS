@@ -88,9 +88,28 @@ def test_phase6_tables_primary_keys():
 
 
 def test_phase6_enums():
-    """Verify Phase 6 and Phase 14 enum classes and their values."""
-    assert [e.value for e in OpportunityType] == ["job", "internship", "hackathon"]
-    assert [e.value for e in OpportunitySource] == ["synthetic", "manual", "api"]
+    """Verify Phase 6, Phase 14, and Phase 26 enum classes and their values."""
+    assert [e.value for e in OpportunityType] == [
+        "job",
+        "internship",
+        "hackathon",
+        "coding_contest",
+    ]
+    expected_sources = [
+        "synthetic",
+        "manual",
+        "api",
+        "remotive",
+        "arbeitnow",
+        "codeforces",
+        "greenhouse",
+        "lever",
+        "adzuna",
+        "usajobs",
+        "remoteok",
+        "devpost",
+    ]
+    assert [e.value for e in OpportunitySource] == expected_sources
     assert [e.value for e in EligibilityStatus] == ["eligible", "partial", "review_required"]
     assert [e.value for e in ApplicationStatus] == [
         "saved",

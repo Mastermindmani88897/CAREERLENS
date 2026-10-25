@@ -63,19 +63,29 @@ class EducationLevel(StrEnum):
 
 
 class OpportunityType(StrEnum):
-    """Opportunity classification type (Phase 14)."""
+    """Opportunity classification type (Phase 14 & 26)."""
 
     JOB = "job"
     INTERNSHIP = "internship"
     HACKATHON = "hackathon"
+    CODING_CONTEST = "coding_contest"
 
 
 class OpportunitySource(StrEnum):
-    """Source origin of opportunity/job listing."""
+    """Source origin of opportunity/job listing (Phase 6 & 26)."""
 
     SYNTHETIC = "synthetic"
     MANUAL = "manual"
     API = "api"
+    REMOTIVE = "remotive"
+    ARBEITNOW = "arbeitnow"
+    CODEFORCES = "codeforces"
+    GREENHOUSE = "greenhouse"
+    LEVER = "lever"
+    ADZUNA = "adzuna"
+    USAJOBS = "usajobs"
+    REMOTEOK = "remoteok"
+    DEVPOST = "devpost"
 
 
 class EligibilityStatus(StrEnum):

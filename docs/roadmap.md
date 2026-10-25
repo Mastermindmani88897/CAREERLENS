@@ -143,6 +143,16 @@ The 30% Foundation Milestone represents the verified structural, relational, arc
 
 #### Phase 26: Multi-Platform Opportunity Collection & Resilient Web Scraping
 - **Core Requirement**: CareerLens must automatically aggregate opportunities across jobs, internships, hackathons, and coding contests from multiple heterogeneous platforms.
+- **Sub-Phase Status**:
+  - **Phase 26.1: Multi-Platform Audit & Architecture Plan — COMPLETE**: Documented in [`docs/phase_26_architecture_plan.md`](file:///e:/CAREERLENS/docs/phase_26_architecture_plan.md). Feasibility matrix across 12 platforms, robots.txt compliance, schema evolution design, and zero unapproved scraping.
+  - **Phase 26.2: Database Migration & Ingestion Foundation — COMPLETE**:
+    - Extended `OpportunityType` with `coding_contest`.
+    - Extended `OpportunitySource` with platform sources: Remotive, Arbeitnow, Codeforces, Greenhouse, Lever, Adzuna, USAJOBS, Remote OK, Devpost.
+    - Added event & synchronization fields to `opportunities`: `event_start_time`, `event_end_time`, `registration_deadline`, `duration_seconds`, `prize_summary`, `first_seen_at`, `last_seen_at`, `external_metadata` (JSONB).
+    - Created `connector_sync_status` table for operational telemetry and recovery state without secrets.
+    - Alembic migration `a2b3c4d5e6f7_add_multi_platform_and_contest_foundation.py` tested for forward upgrade, backward compatibility with existing records, and safe downgrade.
+    - Total verified test suite: 471 tests passing (358 backend + 113 frontend), clean Ruff and Bandit scans.
+  - **Phase 26.3: Wave 1 Connectors (Zero-Credential Public APIs) — SCHEDULED NEXT**: Remotive, Arbeitnow, Codeforces, and Greenhouse public job boards.
 - **Architectural Specifications & Acceptance Criteria**:
   1. **Dual Ingestion Engine**:
      - Official APIs & Authorized Feeds: Connector modules for structured platforms using authenticated API keys/tokens managed securely via environment variables.

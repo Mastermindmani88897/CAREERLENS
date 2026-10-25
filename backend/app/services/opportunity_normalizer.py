@@ -5,7 +5,7 @@ while preserving clean display capitalization.
 """
 
 import re
-from datetime import date, datetime
+from datetime import UTC, date, datetime, time
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
@@ -122,6 +122,55 @@ def parse_flexible_date(val: Any) -> date | None:
     return None
 
 
+def parse_flexible_datetime(val: Any) -> datetime | None:
+    """
+    Parse UTC-aware datetime from datetime, date, timestamp, or string.
+    Supports ISO formats, unix timestamps, and common date strings.
+    """
+    if val is None:
+        return None
+    if isinstance(val, datetime):
+        return val if val.tzinfo is not None else val.replace(tzinfo=UTC)
+    if isinstance(val, date):
+        return datetime.combine(val, time.min, tzinfo=UTC)
+    if isinstance(val, (int, float)):
+        try:
+            return datetime.fromtimestamp(val, tz=UTC)
+        except Exception:
+            return None
+
+    text_val = str(val).strip()
+    if not text_val:
+        return None
+
+    if text_val.isdigit():
+        try:
+            return datetime.fromtimestamp(int(text_val), tz=UTC)
+        except Exception:
+            pass
+
+    try:
+        dt = datetime.fromisoformat(text_val.replace("Z", "+00:00"))
+        return dt if dt.tzinfo is not None else dt.replace(tzinfo=UTC)
+    except ValueError:
+        pass
+
+    formats = [
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M",
+        "%Y-%m-%d",
+        "%d-%m-%Y %H:%M:%S",
+        "%d/%m/%Y %H:%M:%S",
+    ]
+    for fmt in formats:
+        try:
+            dt = datetime.strptime(text_val, fmt)
+            return dt.replace(tzinfo=UTC)
+        except ValueError:
+            continue
+    return None
+
+
 def normalize_numeric_int(val: Any) -> int | None:
     """Parse integer from number or string (handles '120,000', '150k')."""
     if val is None:
@@ -164,6 +213,8 @@ def normalize_opportunity_type(raw: str | None) -> OpportunityType:
     for opt in OpportunityType:
         if opt.value == norm:
             return opt
+    if "contest" in norm or "competition" in norm or "competitive" in norm:
+        return OpportunityType.CODING_CONTEST
     if "intern" in norm:
         return OpportunityType.INTERNSHIP
     if "hack" in norm:
@@ -177,7 +228,7 @@ def normalize_employment_type(
 ) -> EmploymentType:
     """
     Normalize employment type based on raw string and opportunity type semantics.
-    For HACKATHON, defaults to ANY.
+    For HACKATHON and CODING_CONTEST, defaults to ANY.
     For INTERNSHIP, defaults to INTERNSHIP.
     """
     if raw:
@@ -199,7 +250,7 @@ def normalize_employment_type(
             return mapping[norm]
 
     # Defaults based on opportunity type semantics
-    if opportunity_type == OpportunityType.HACKATHON:
+    if opportunity_type in (OpportunityType.HACKATHON, OpportunityType.CODING_CONTEST):
         return EmploymentType.ANY
     if opportunity_type == OpportunityType.INTERNSHIP:
         return EmploymentType.INTERNSHIP
