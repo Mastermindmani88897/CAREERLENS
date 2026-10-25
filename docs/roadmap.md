@@ -72,7 +72,7 @@ CareerLens development is organized into three major milestone horizons:
 | **Phase 23** | Performance Optimization, Caching & Database Tuning | **COMPLETE** | `2c25293` |
 | **Phase 24** | Deployment Configuration, Docker Containerization & CI/CD | **COMPLETE (CI Verified)** | `9dbe0c9` |
 | **Phase 25** | Final Academic Project Defense Documentation & Handover | **COMPLETE** | Verified Artifacts |
-| **Phase 26** | Multi-Platform Opportunity Collection & Resilient Web Scraping | **NEXT** *(Mandatory)* | Scheduled |
+| **Phase 26** | Multi-Platform Opportunity Collection & Resilient Web Scraping | **IN PROGRESS** *(Phase 26.1 Audit Complete)* | [`docs/phase_26_architecture_plan.md`](file:///e:/CAREERLENS/docs/phase_26_architecture_plan.md) |
 | **Phase 27** | Automated External Application Form Filling & User Confirmation | **SCHEDULED** *(Mandatory)* | Post-Phase 26 |
 
 ---
