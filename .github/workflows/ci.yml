@@ -22,7 +22,7 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg16
         env:
-          POSTGRES_USER: careerlens_user
+          POSTGRES_USER: postgres
           POSTGRES_PASSWORD: test_ci_password_123
           POSTGRES_DB: careerlens_test
         ports:
@@ -64,10 +64,13 @@ jobs:
           cd backend
           bandit -r app alembic -ll
 
-      - name: Initialize pgvector extension and enforce least privilege
+      - name: Initialize pgvector extension and least-privilege application user
         run: |
-          PGPASSWORD=test_ci_password_123 psql -h localhost -U careerlens_user -d careerlens_test -c "CREATE EXTENSION IF NOT EXISTS vector;"
-          PGPASSWORD=test_ci_password_123 psql -h localhost -U careerlens_user -d careerlens_test -c "ALTER ROLE careerlens_user NOCREATEDB NOSUPERUSER NOCREATEROLE;"
+          PGPASSWORD=test_ci_password_123 psql -h localhost -U postgres -d careerlens_test -c "CREATE EXTENSION IF NOT EXISTS vector;"
+          PGPASSWORD=test_ci_password_123 psql -h localhost -U postgres -d careerlens_test -c "CREATE ROLE careerlens_user WITH LOGIN PASSWORD 'test_ci_password_123' NOCREATEDB NOSUPERUSER NOCREATEROLE;"
+          PGPASSWORD=test_ci_password_123 psql -h localhost -U postgres -d careerlens_test -c "GRANT ALL PRIVILEGES ON DATABASE careerlens_test TO careerlens_user;"
+          PGPASSWORD=test_ci_password_123 psql -h localhost -U postgres -d careerlens_test -c "ALTER DATABASE careerlens_test OWNER TO careerlens_user;"
+          PGPASSWORD=test_ci_password_123 psql -h localhost -U postgres -d careerlens_test -c "GRANT ALL ON SCHEMA public TO careerlens_user;"
 
       - name: Run Alembic Database Migrations
         env:
