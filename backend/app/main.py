@@ -26,7 +26,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info(
         "Starting %s v%s in %s mode", settings.PROJECT_NAME, settings.VERSION, settings.ENVIRONMENT
     )
+    scheduler = None
+    if settings.SCHEDULER_ENABLED:
+        from app.services.connectors.scheduler import get_connector_scheduler
+
+        scheduler = get_connector_scheduler()
+        await scheduler.start()
+
     yield
+
+    if scheduler is not None:
+        await scheduler.stop()
     logger.info("Shutting down %s", settings.PROJECT_NAME)
 
 

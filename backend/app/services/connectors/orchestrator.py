@@ -96,6 +96,10 @@ class ConnectorOrchestrator:
                 exc,
                 exc_info=True,
             )
+            try:
+                await self._db.rollback()
+            except Exception:
+                pass
             fetch_summary.status = ConnectorStatus.FAILED
             fetch_summary.error_message = f"Ingestion layer error: {type(exc).__name__}: {exc}"
             fetch_summary.duration_seconds = round(time.monotonic() - start, 2)
@@ -123,6 +127,78 @@ class ConnectorOrchestrator:
             fetch_summary.duration_seconds,
         )
         return fetch_summary
+
+    async def run_connector_with_checkpoint(
+        self,
+        connector: BaseOpportunityConnector,
+        stale_lock_minutes: int | None = None,
+    ) -> ConnectorRunSummary:
+        """
+        Execute a single connector with distributed claim acquisition and checkpoint persistence.
+
+        1. Atomically acquires an execution claim on connector_sync_status.
+        2. If claim fails (e.g. another worker is running it), returns SKIPPED summary.
+        3. Executes connector fetch and transactional ingestion.
+        4. If ingestion throws an unhandled error, rolls back the opportunity transaction.
+        5. Persists the final outcome (SUCCESS, PARTIAL, FAILED, etc.) to connector_sync_status.
+        """
+        start = time.monotonic()
+        from app.services.connectors.checkpoint import (
+            acquire_connector_claim,
+            release_connector_claim,
+        )
+
+        acquired, msg = await acquire_connector_claim(
+            self._db,
+            connector.source_name,
+            stale_lock_minutes=stale_lock_minutes,
+        )
+        if not acquired:
+            logger.info(
+                "[orchestrator] Skipping connector '%s': %s",
+                connector.source_name,
+                msg,
+            )
+            return ConnectorRunSummary(
+                source=connector.source_name,
+                status=ConnectorStatus.SKIPPED,
+                error_message=msg,
+                duration_seconds=round(time.monotonic() - start, 2),
+            )
+
+        summary: ConnectorRunSummary
+        try:
+            summary = await self.run_connector(connector)
+        except Exception as exc:
+            logger.error(
+                "[orchestrator] Unexpected exception during '%s': %s",
+                connector.source_name,
+                exc,
+                exc_info=True,
+            )
+            try:
+                await self._db.rollback()
+            except Exception:
+                pass
+            summary = ConnectorRunSummary(
+                source=connector.source_name,
+                status=ConnectorStatus.FAILED,
+                error_message=f"Unhandled exception during execution: {type(exc).__name__}: {exc}",
+                duration_seconds=round(time.monotonic() - start, 2),
+            )
+
+        # Release claim and record outcome
+        try:
+            await release_connector_claim(self._db, summary)
+        except Exception as exc:
+            logger.error(
+                "[orchestrator] Failed to release claim / record status for '%s': %s",
+                connector.source_name,
+                exc,
+                exc_info=True,
+            )
+
+        return summary
 
     async def run_all(
         self,

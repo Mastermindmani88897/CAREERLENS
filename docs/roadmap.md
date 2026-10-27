@@ -171,8 +171,15 @@ The 30% Foundation Milestone represents the verified structural, relational, arc
     - Added `LEVER_SITE_TOKENS` to Pydantic `Settings` schema and `.env.example`.
     - Extended `ConnectorOrchestrator` with `get_all_connectors()` registry unifying all 8 Wave 1 and Wave 2 connectors.
     - Verified all 4 connectors via both mocked tests (49 passing in `tests/test_phase26_wave2_connectors.py`) and live bounded HTTP calls against official live endpoints.
-    - Total verified test suite: 526 tests passing across backend with zero regressions, clean Ruff and Bandit scans.
-  - **Phase 26.5: Background Ingestion Scheduler & Sync Telemetry Endpoints — SCHEDULED NEXT**: Periodic background sync workers, checkpoint persistence, and connector status monitoring endpoints.
+  - **Phase 26.5: Background Ingestion Scheduler & Sync Telemetry Endpoints — COMPLETE**:
+    - Implemented database-backed persistent synchronization checkpoints using the existing `connector_sync_status` table.
+    - Distributed locking and claim mechanism preventing overlapping executions across workers/replicas via PostgreSQL `SELECT FOR UPDATE` row locking with automated stale crash recovery.
+    - Built configurable `ConnectorScheduler` with bounded concurrency (`asyncio.Semaphore`), per-connector execution timeouts (`asyncio.wait_for`), and graceful lifecycle hooks tied to FastAPI lifespan.
+    - Implemented operational telemetry API: `GET /api/v1/connectors/status` and manual trigger `POST /api/v1/connectors/{source}/sync` protected by administrative role authorization (`get_current_admin_user`).
+    - Enforced strict credential sanitization redacting query parameters, authorization headers, and secrets from all database summaries and API responses.
+    - Comprehensive unit and integration test suite (`tests/test_phase26_sync_status.py`) with 31 passing tests covering checkpoints, scheduler concurrency, timeout handling, fault isolation, and API access control.
+    - Total verified test suite: 557 tests passing across the backend with zero regressions, clean Ruff and Bandit scans.
+  - **Phase 26.6: End-to-End Milestone Verification & Live Sourcing Checkpoint — SCHEDULED NEXT**: Final Horizon 4 opportunity collection audit and end-to-end verification.
 - **Architectural Specifications & Acceptance Criteria**:
   1. **Dual Ingestion Engine**:
      - Official APIs & Authorized Feeds: Connector modules for structured platforms using authenticated API keys/tokens managed securely via environment variables.

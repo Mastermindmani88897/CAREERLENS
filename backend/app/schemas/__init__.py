@@ -31,6 +31,11 @@ from app.schemas.candidate_profile import (
     SkillCreate,
     SkillResponse,
 )
+from app.schemas.connector import (
+    ConnectorStatusItem,
+    ConnectorStatusResponse,
+    ConnectorSyncTriggerResponse,
+)
 from app.schemas.matching import (
     MatchEvaluateRequest,
     MatchListResponse,
@@ -80,6 +85,9 @@ __all__ = [
     "CertificationCreate",
     "CertificationResponse",
     "CertificationUpdate",
+    "ConnectorStatusItem",
+    "ConnectorStatusResponse",
+    "ConnectorSyncTriggerResponse",
     "ContactInfo",
     "DetectedSections",
     "EducationCreate",

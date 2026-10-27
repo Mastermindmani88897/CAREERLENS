@@ -57,6 +57,14 @@ class Settings(BaseSettings):
     USAJOBS_API_KEY: str = ""
     USAJOBS_EMAIL: str = ""
 
+    # Connector Synchronization & Scheduler (Phase 26.5)
+    SCHEDULER_ENABLED: bool = False
+    SCHEDULER_INTERVAL_SECONDS: int = 60
+    SCHEDULER_MAX_CONCURRENCY: int = 2
+    CONNECTOR_TIMEOUT_SECONDS: int = 300
+    CONNECTOR_STALE_LOCK_MINUTES: int = 30
+    CONNECTOR_DEFAULT_REFRESH_MINUTES: int = 60
+
     @model_validator(mode="before")
     @classmethod
     def assemble_settings_aliases(cls, data: Any) -> Any:
