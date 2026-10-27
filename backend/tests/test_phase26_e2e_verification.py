@@ -295,9 +295,7 @@ class TestE2EDiscoveryAndRecommendationIntegration:
         assert resp.status_code == 200
         data = resp.json()
         assert data["total"] >= 1
-        contest_items = [
-            item for item in data["items"] if item["source_id"] == f"cf-{test_uuid}"
-        ]
+        contest_items = [item for item in data["items"] if item["source_id"] == f"cf-{test_uuid}"]
         assert len(contest_items) == 1
         contest = contest_items[0]
         assert contest["opportunity_type"] == "coding_contest"
@@ -406,9 +404,7 @@ class TestE2ECheckpointPersistenceAndLocking:
             ConnectorRunSummary(source="adzuna", status=ConnectorStatus.SUCCESS),
         )
 
-    async def test_stale_claim_recovery_after_worker_crash(
-        self, db_session: AsyncSession
-    ) -> None:
+    async def test_stale_claim_recovery_after_worker_crash(self, db_session: AsyncSession) -> None:
         """Crashed worker lock older than stale threshold is reclaimed automatically."""
         await ensure_connector_status_rows(db_session, ["usajobs"])
 

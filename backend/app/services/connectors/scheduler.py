@@ -60,14 +60,10 @@ class ConnectorScheduler:
             else settings.SCHEDULER_INTERVAL_SECONDS
         )
         self.max_concurrency = (
-            max_concurrency
-            if max_concurrency is not None
-            else settings.SCHEDULER_MAX_CONCURRENCY
+            max_concurrency if max_concurrency is not None else settings.SCHEDULER_MAX_CONCURRENCY
         )
         self.timeout_seconds = (
-            timeout_seconds
-            if timeout_seconds is not None
-            else settings.CONNECTOR_TIMEOUT_SECONDS
+            timeout_seconds if timeout_seconds is not None else settings.CONNECTOR_TIMEOUT_SECONDS
         )
         self.stale_lock_minutes = (
             stale_lock_minutes
@@ -160,9 +156,7 @@ class ConnectorScheduler:
             statuses = await get_connector_sync_statuses(session)
 
         # Build map of due source identifiers
-        due_sources = {
-            s.source for s in statuses if is_connector_due(s, self.stale_lock_minutes)
-        }
+        due_sources = {s.source for s in statuses if is_connector_due(s, self.stale_lock_minutes)}
 
         if not due_sources:
             return []

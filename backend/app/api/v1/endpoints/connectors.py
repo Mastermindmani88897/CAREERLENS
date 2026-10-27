@@ -185,9 +185,7 @@ async def trigger_manual_sync(
     ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=(
-                f"Connector '{normalized_source}' is currently running and locked."
-            ),
+            detail=(f"Connector '{normalized_source}' is currently running and locked."),
         )
 
     return ConnectorSyncTriggerResponse(

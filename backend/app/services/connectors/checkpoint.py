@@ -44,9 +44,7 @@ _SECRET_QUERY_PARAM_REGEX = re.compile(
     r"(?i)(api[_-]?key|app[_-]?id|app[_-]?key|token|secret|password|auth|authorization)"
     r"(=|%3D)([^&\s]+)"
 )
-_AUTH_HEADER_REGEX = re.compile(
-    r"(?i)(authorization|authorization-key|api-key):\s*([^\r\n,]+)"
-)
+_AUTH_HEADER_REGEX = re.compile(r"(?i)(authorization|authorization-key|api-key):\s*([^\r\n,]+)")
 _BEARER_TOKEN_REGEX = re.compile(r"(?i)(bearer|basic)\s+([a-zA-Z0-9_\-\.\~]+)")
 
 
@@ -165,11 +163,7 @@ async def acquire_connector_claim(
     await ensure_connector_status_rows(db, [source])
 
     # Lock the row for update
-    stmt = (
-        select(ConnectorSyncStatus)
-        .where(ConnectorSyncStatus.source == source)
-        .with_for_update()
-    )
+    stmt = select(ConnectorSyncStatus).where(ConnectorSyncStatus.source == source).with_for_update()
     result = await db.execute(stmt)
     row = result.scalar_one_or_none()
 
@@ -190,8 +184,7 @@ async def acquire_connector_claim(
         if started_at and started_at > stale_cutoff:
             await db.rollback()
             return False, (
-                f"Connector '{source}' is already running "
-                f"(started at {started_at.isoformat()})."
+                f"Connector '{source}' is already running (started at {started_at.isoformat()})."
             )
         logger.warning(
             "[checkpoint] Reclaiming stale lock for connector '%s' (started at %s, timeout=%dm)",
@@ -353,9 +346,9 @@ def is_connector_due(
 
     if current_status == "running":
         stale_minutes = stale_lock_minutes or settings.CONNECTOR_STALE_LOCK_MINUTES
-        if row.last_sync_started_at and (
-            current_time - row.last_sync_started_at
-        ) > timedelta(minutes=stale_minutes):
+        if row.last_sync_started_at and (current_time - row.last_sync_started_at) > timedelta(
+            minutes=stale_minutes
+        ):
             return True  # Stale lock: due for recovery run
         return False
 
