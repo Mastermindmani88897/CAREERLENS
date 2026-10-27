@@ -71,9 +71,8 @@ CareerLens development is organized into three major milestone horizons:
 | **Phase 22** | End-to-End Integration & User Acceptance Testing | **COMPLETE** | `436165e` |
 | **Phase 23** | Performance Optimization, Caching & Database Tuning | **COMPLETE** | `2c25293` |
 | **Phase 24** | Deployment Configuration, Docker Containerization & CI/CD | **COMPLETE (CI Verified)** | `9dbe0c9` |
-| **Phase 25** | Final Academic Project Defense Documentation & Handover | **COMPLETE** | Verified Artifacts |
-| **Phase 26** | Multi-Platform Opportunity Collection & Resilient Web Scraping | **IN PROGRESS** *(Phase 26.1 Audit Complete)* | [`docs/phase_26_architecture_plan.md`](file:///e:/CAREERLENS/docs/phase_26_architecture_plan.md) |
-| **Phase 27** | Automated External Application Form Filling & User Confirmation | **SCHEDULED** *(Mandatory)* | Post-Phase 26 |
+| **Phase 26** | Multi-Platform Opportunity Collection & Resilient Web Scraping | **COMPLETE** | `2133725` |
+| **Phase 27** | Automated External Application Form Filling & User Confirmation | **IN PROGRESS** *(Phase 27.2 Foundation Complete)* | Phase 27.2 Checkpoint |
 
 ---
 
@@ -204,5 +203,19 @@ The 30% Foundation Milestone represents the verified structural, relational, arc
   1. **Autofill Engine**: Browser extension or automated browser agent (Playwright) capable of detecting standard ATS form fields (Workday, Greenhouse, Lever, Taleo) and mapping candidate profile/resume data (contact, education, skills, experience, portfolio links).
   2. **User In-the-Loop Review**: Compulsory interactive preview modal displaying populated fields for candidate verification, modification, and explicit manual confirmation prior to form submission.
   3. **Verified Submission & Outcome Tracking**: Automated post-submission receipt detection, verification of submission success, and seamless status transition in the internal `applications` tracking system from `saved` to `applied` with audit timestamp and platform reference.
+
+##### Incremental Implementation Progress:
+- **Phase 27.1: Existing System Audit & External Application Autofill Design — COMPLETE**:
+  - Comprehensive architectural audit of candidate profile, opportunity, resume, and application tracking systems.
+  - Multi-phase safety boundary plan establishing zero-submission guarantees, SSRF defense in depth, and human-in-the-loop confirmation model.
+- **Phase 27.2: Application Preparation Engine & Field-Mapping Foundation — COMPLETE**:
+  - **AutofillSession Model & Migration**: Created `AutofillSession` ORM model (`backend/app/models/autofill.py`) and reversible Alembic migration `b3c4d5e6f7a8_create_autofill_sessions.py` with foreign keys to `candidate_profiles`, `opportunities`, and `resumes`, status lifecycle enums (`ATSProvider`, `AutofillSessionStatus`), JSONB payloads for normalized field mappings and missing fields, safe telemetry diagnostics, and active session expiration.
+  - **Safe URL Validation & SSRF Guardrails**: Implemented `validate_external_application_url` (`backend/app/services/autofill/url_validator.py`) enforcing strict HTTPS scheme requirements, embedded credentials rejection, ATS domain allowlist check, and comprehensive SSRF defense with DNS IP resolution inspection rejecting loopback, private, link-local, reserved, multicast, CGNAT, and IPv4-mapped IPv6 ranges.
+  - **ATS Provider Detection**: Implemented `detect_ats_provider` (`backend/app/services/autofill/provider_detector.py`) supporting Greenhouse (`boards.greenhouse.io`, `job-boards.greenhouse.io`) and Lever (`jobs.lever.co`) application and posting URLs with board slug and job ID extraction.
+  - **Verified Candidate Payload Builder**: Implemented `build_normalized_autofill_payload` (`backend/app/services/autofill/payload_builder.py`) safely mapping verified candidate profile attributes, skills, education, and experience while preventing inference of non-inferrable demographic or work authorization disclosures and exposing only safe resume metadata (zero raw text leakage).
+  - **Authenticated API Endpoints**: Implemented `POST /api/v1/autofill/prepare`, `GET /api/v1/autofill/{session_id}`, and `POST /api/v1/autofill/{session_id}/cancel` (`backend/app/api/v1/endpoints/autofill.py`) gated by `AUTOFILL_ENABLED`, enforcing candidate profile initialization, opportunity active status, resume ownership isolation, and idempotent active session reuse.
+  - **Quality Gates & Test Coverage**: 23 new isolated automated tests (`backend/tests/test_phase27_autofill_foundation.py`); 589/589 backend tests passing; 113/113 frontend tests passing (702 total passing automated tests); clean Ruff formatting and linting; zero Bandit security vulnerabilities.
+  - **Strict Boundary**: Zero external browser automation, zero external forms submitted.
+
 
 

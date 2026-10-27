@@ -34,6 +34,7 @@ from app.models.enums import (
 )
 
 if TYPE_CHECKING:
+    from app.models.autofill import AutofillSession
     from app.models.tracking import Application, InterviewPrep, Match
     from app.models.user import User
 
@@ -203,6 +204,11 @@ class CandidateProfile(Base):
         back_populates="candidate_profile",
         cascade="all, delete-orphan",
     )
+    autofill_sessions: Mapped[list["AutofillSession"]] = relationship(
+        "AutofillSession",
+        back_populates="candidate_profile",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
 
@@ -263,6 +269,10 @@ class Resume(Base):
     candidate_profile: Mapped["CandidateProfile"] = relationship(
         "CandidateProfile",
         back_populates="resumes",
+    )
+    autofill_sessions: Mapped[list["AutofillSession"]] = relationship(
+        "AutofillSession",
+        back_populates="resume",
     )
 
     def __repr__(self) -> str:

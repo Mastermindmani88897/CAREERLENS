@@ -35,6 +35,7 @@ from app.models.enums import (
 )
 
 if TYPE_CHECKING:
+    from app.models.autofill import AutofillSession
     from app.models.tracking import Application, InterviewPrep, Match
 
 
@@ -272,6 +273,11 @@ class Opportunity(Base):
     )
     interview_preps: Mapped[list["InterviewPrep"]] = relationship(
         "InterviewPrep",
+        back_populates="opportunity",
+        cascade="all, delete-orphan",
+    )
+    autofill_sessions: Mapped[list["AutofillSession"]] = relationship(
+        "AutofillSession",
         back_populates="opportunity",
         cascade="all, delete-orphan",
     )

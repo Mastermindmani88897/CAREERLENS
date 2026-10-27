@@ -106,3 +106,27 @@ class ApplicationStatus(StrEnum):
     OFFER = "offer"
     REJECTED = "rejected"
     WITHDRAWN = "withdrawn"
+
+
+class ATSProvider(StrEnum):
+    """Supported Applicant Tracking System (ATS) providers for autofill (Phase 27)."""
+
+    GREENHOUSE = "greenhouse"
+    LEVER = "lever"
+    UNSUPPORTED = "unsupported"
+
+
+class AutofillSessionStatus(StrEnum):
+    """Lifecycle status for an application autofill session (Phase 27)."""
+
+    PREPARATION_PENDING = "preparation_pending"
+    DATA_MAPPED = "data_mapped"
+    CANDIDATE_REVIEW = "candidate_review"
+    ASSISTANT_LAUNCHED = "assistant_launched"
+    FIELDS_POPULATED = "fields_populated"
+    AWAITING_CANDIDATE_ACTION = "awaiting_candidate_action"
+    AWAITING_CONFIRMATION = "awaiting_confirmation"
+    SUBMITTED_VERIFIED = "submitted_verified"
+    SUBMISSION_UNCERTAIN = "submission_uncertain"
+    FAILED = "failed"
+    CANCELLED = "cancelled"

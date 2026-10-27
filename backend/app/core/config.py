@@ -65,6 +65,15 @@ class Settings(BaseSettings):
     CONNECTOR_STALE_LOCK_MINUTES: int = 30
     CONNECTOR_DEFAULT_REFRESH_MINUTES: int = 60
 
+    # External Application Autofill (Phase 27)
+    AUTOFILL_ENABLED: bool = False
+    AUTOFILL_SESSION_TIMEOUT_MINUTES: int = 30
+    AUTOFILL_ALLOWED_ATS_DOMAINS: list[str] = [
+        "boards.greenhouse.io",
+        "job-boards.greenhouse.io",
+        "jobs.lever.co",
+    ]
+
     @model_validator(mode="before")
     @classmethod
     def assemble_settings_aliases(cls, data: Any) -> Any:
@@ -83,6 +92,11 @@ class Settings(BaseSettings):
                     ]
             if "MAX_RESUME_FILE_SIZE_MB" in data and "MAX_RESUME_SIZE_MB" not in data:
                 data["MAX_RESUME_SIZE_MB"] = data["MAX_RESUME_FILE_SIZE_MB"]
+            raw_ats_domains = data.get("AUTOFILL_ALLOWED_ATS_DOMAINS")
+            if raw_ats_domains is not None and isinstance(raw_ats_domains, str):
+                data["AUTOFILL_ALLOWED_ATS_DOMAINS"] = [
+                    d.strip().lower() for d in raw_ats_domains.split(",") if d.strip()
+                ]
         return data
 
     @field_validator("CORS_ORIGINS", mode="after")

@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api.v1.endpoints import (
     applications,
     auth,
+    autofill,
     connectors,
     health,
     matching,
@@ -33,4 +34,9 @@ api_router.include_router(
     applications.router,
     prefix="/applications",
     tags=["applications"],
+)
+api_router.include_router(
+    autofill.router,
+    prefix="/autofill",
+    tags=["autofill"],
 )
