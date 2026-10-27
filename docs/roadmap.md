@@ -179,7 +179,17 @@ The 30% Foundation Milestone represents the verified structural, relational, arc
     - Enforced strict credential sanitization redacting query parameters, authorization headers, and secrets from all database summaries and API responses.
     - Comprehensive unit and integration test suite (`tests/test_phase26_sync_status.py`) with 31 passing tests covering checkpoints, scheduler concurrency, timeout handling, fault isolation, and API access control.
     - Total verified test suite: 557 tests passing across the backend with zero regressions, clean Ruff and Bandit scans.
-  - **Phase 26.6: End-to-End Milestone Verification & Live Sourcing Checkpoint — SCHEDULED NEXT**: Final Horizon 4 opportunity collection audit and end-to-end verification.
+  - **Phase 26.6: End-to-End Milestone Verification & Live Sourcing Acceptance — COMPLETE**:
+    - End-to-end integration and verification of all 8 external connectors (Remotive, Arbeitnow, Codeforces, Greenhouse, Adzuna, USAJOBS, Lever, Remote OK) across database ingestion, deduplication, persistent synchronization, background scheduler, telemetry API, and recommendation integration.
+    - Verified live bounded network connectivity and data normalization against official endpoints for all 8 platforms.
+    - Verified idempotent ingestion: identical subsequent ingestion runs produce 0 duplicate records and preserve existing metadata.
+    - Verified non-destructive updates when missing optional fields are encountered.
+    - Verified pgvector `job_embedding` generation on opportunity ingestion.
+    - Verified Opportunity Discovery API (`GET /api/v1/opportunities/`) and Hybrid Recommendation Matching engine (`POST /api/v1/matches/`) evaluate ingested multi-platform opportunities seamlessly.
+    - Verified multi-worker claim locking (`SELECT FOR UPDATE`) and stale-claim crash recovery.
+    - Verified connector status monitoring endpoint (`GET /api/v1/connectors/status`) and manual synchronization trigger (`POST /api/v1/connectors/{source}/sync`) with strict admin authorization and zero credential leakage.
+    - Comprehensive Phase 26.6 test suite (`tests/test_phase26_e2e_verification.py`) with 9 passing tests.
+    - Total verified test suite: 679 automated tests passing (566 backend + 113 frontend), clean Ruff and Bandit security scans, zero type errors.
 - **Architectural Specifications & Acceptance Criteria**:
   1. **Dual Ingestion Engine**:
      - Official APIs & Authorized Feeds: Connector modules for structured platforms using authenticated API keys/tokens managed securely via environment variables.
