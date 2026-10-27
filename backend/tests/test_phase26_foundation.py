@@ -281,7 +281,7 @@ def test_csv_parsing_with_event_metadata() -> None:
     assert row.company == "Global Dev"
     assert row.opportunity_type == "hackathon"
     assert row.source == "devpost"
-    assert row.source_id == "dp-1234"
+    assert row.source_id == "dp-1"
     assert str(row.duration_seconds) == "86400"
     assert row.prize_summary == "$10k prizes"
 

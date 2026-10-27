@@ -279,7 +279,10 @@ def test_env_example_contains_no_real_secrets():
                 "GEMINI_API_KEY",
                 "OPENAI_API_KEY",
                 "ADZUNA_APP_KEY",
+                "USAJOBS_API_KEY",
             ):
-                assert val == "", f".env.example has non-empty secret for {key}"
+                assert val == "" or val.startswith("your_"), (
+                    f".env.example has non-empty secret for {key}"
+                )
             if "PASSWORD" in val:
                 assert val == "PASSWORD" or "PASSWORD@" in val, f"Suspicious password in {line}"

@@ -49,6 +49,13 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
     EMBEDDING_DIMENSION: int = 384
 
+    # External Opportunity Connectors (Phase 26)
+    GREENHOUSE_BOARD_TOKENS: str = ""
+    ADZUNA_APP_ID: str = ""
+    ADZUNA_APP_KEY: str = ""
+    USAJOBS_API_KEY: str = ""
+    USAJOBS_EMAIL: str = ""
+
     @model_validator(mode="before")
     @classmethod
     def assemble_settings_aliases(cls, data: Any) -> Any:

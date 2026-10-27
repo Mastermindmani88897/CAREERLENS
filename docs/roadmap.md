@@ -152,7 +152,17 @@ The 30% Foundation Milestone represents the verified structural, relational, arc
     - Created `connector_sync_status` table for operational telemetry and recovery state without secrets.
     - Alembic migration `a2b3c4d5e6f7_add_multi_platform_and_contest_foundation.py` tested for forward upgrade, backward compatibility with existing records, and safe downgrade.
     - Total verified test suite: 471 tests passing (358 backend + 113 frontend), clean Ruff and Bandit scans.
-  - **Phase 26.3: Wave 1 Connectors (Zero-Credential Public APIs) — SCHEDULED NEXT**: Remotive, Arbeitnow, Codeforces, and Greenhouse public job boards.
+  - **Phase 26.3: Wave 1 Connectors (Zero-Credential Public APIs) — COMPLETE**:
+    - Built modular `BaseOpportunityConnector` framework with backoff, jitter, rate-limit awareness, and structured telemetry (`ConnectorRunSummary`, `ConnectorBatchResult`).
+    - Implemented 4 production connectors:
+      - `RemotiveConnector`: Remote developer/tech jobs with salary parsing, tag-to-skills mapping, single-page pull semantics.
+      - `ArbeitnowConnector`: European/remote jobs with multi-page cursor navigation, explicit visa sponsorship parsing, and page limits.
+      - `CodeforcesConnector`: Competitive programming contests with contest phase mapping (`BEFORE`, `CODING`, `FINISHED`), Unix epoch to UTC conversion, and duration calculations.
+      - `GreenhouseConnector`: Public employer job boards via `GREENHOUSE_BOARD_TOKENS` configuration, per-board fault isolation, and clear `NOT_CONFIGURED` semantics.
+    - Implemented `ConnectorOrchestrator` integrating connectors with transactional `ingest_raw_records`, fault isolation, and aggregated run summaries.
+    - Comprehensive unit & integration test suite (`tests/test_phase26_connectors.py`) with 119 passing tests covering happy paths, pagination, 429 backoff, network timeouts, multi-board aggregation, salary parsing, and schema drift.
+    - Total verified test suite: 477+ tests passing across backend and frontend with zero regressions.
+  - **Phase 26.4: Wave 2 Connectors (Feed & Structured Sources) — SCHEDULED NEXT**: USAJOBS, Adzuna, Lever, and Remote OK.
 - **Architectural Specifications & Acceptance Criteria**:
   1. **Dual Ingestion Engine**:
      - Official APIs & Authorized Feeds: Connector modules for structured platforms using authenticated API keys/tokens managed securely via environment variables.

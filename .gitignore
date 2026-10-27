@@ -84,10 +84,13 @@ frontend/dist/
 frontend/build/
 frontend/.vite/
 
-# Local env files (Vite)
+# Local env files
 frontend/.env
 frontend/.env.local
 frontend/.env.*.local
+backend/.env
+backend/.env.local
+backend/.env.*.local
 
 # -----------------------------------------------------------------------------
 # DATABASE
