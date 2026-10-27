@@ -97,9 +97,7 @@ class ConnectorOrchestrator:
                 exc_info=True,
             )
             fetch_summary.status = ConnectorStatus.FAILED
-            fetch_summary.error_message = (
-                f"Ingestion layer error: {type(exc).__name__}: {exc}"
-            )
+            fetch_summary.error_message = f"Ingestion layer error: {type(exc).__name__}: {exc}"
             fetch_summary.duration_seconds = round(time.monotonic() - start, 2)
             return fetch_summary
 
@@ -140,3 +138,26 @@ class ConnectorOrchestrator:
             summary = await self.run_connector(connector)
             summaries.append(summary)
         return summaries
+
+
+def get_all_connectors() -> list[BaseOpportunityConnector]:
+    """Instantiate and return all registered connectors across Wave 1 and Wave 2."""
+    from app.services.connectors.adzuna import AdzunaConnector
+    from app.services.connectors.arbeitnow import ArbeitnowConnector
+    from app.services.connectors.codeforces import CodeforcesConnector
+    from app.services.connectors.greenhouse import GreenhouseConnector
+    from app.services.connectors.lever import LeverConnector
+    from app.services.connectors.remoteok import RemoteOKConnector
+    from app.services.connectors.remotive import RemotiveConnector
+    from app.services.connectors.usajobs import USAJOBSConnector
+
+    return [
+        RemotiveConnector(),
+        ArbeitnowConnector(),
+        CodeforcesConnector(),
+        GreenhouseConnector(),
+        AdzunaConnector(),
+        USAJOBSConnector(),
+        LeverConnector(),
+        RemoteOKConnector(),
+    ]

@@ -159,8 +159,7 @@ async def _execute_with_retries(
             continue
 
     raise RuntimeError(
-        f"[{source_name}] all {max_retries + 1} attempts failed. "
-        f"Last error: {last_exc}"
+        f"[{source_name}] all {max_retries + 1} attempts failed. Last error: {last_exc}"
     )
 
 
@@ -225,9 +224,7 @@ class BaseOpportunityConnector(ABC):
             Tuple of (all_raw_rows, ConnectorRunSummary).
         """
         if not self.is_configured():
-            logger.info(
-                "[%s] Connector is not configured — skipping sync.", self.source_name
-            )
+            logger.info("[%s] Connector is not configured — skipping sync.", self.source_name)
             return [], ConnectorRunSummary(
                 source=self.source_name,
                 status=ConnectorStatus.NOT_CONFIGURED,
@@ -285,8 +282,10 @@ class BaseOpportunityConnector(ABC):
                 await asyncio.sleep(self.rate_limit_delay)
 
         duration = time.monotonic() - start_time
-        status = ConnectorStatus.FAILED if (had_error and not all_records) else (
-            ConnectorStatus.PARTIAL if had_error else ConnectorStatus.SUCCESS
+        status = (
+            ConnectorStatus.FAILED
+            if (had_error and not all_records)
+            else (ConnectorStatus.PARTIAL if had_error else ConnectorStatus.SUCCESS)
         )
 
         summary = ConnectorRunSummary(

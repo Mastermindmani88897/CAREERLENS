@@ -162,7 +162,17 @@ The 30% Foundation Milestone represents the verified structural, relational, arc
     - Implemented `ConnectorOrchestrator` integrating connectors with transactional `ingest_raw_records`, fault isolation, and aggregated run summaries.
     - Comprehensive unit & integration test suite (`tests/test_phase26_connectors.py`) with 119 passing tests covering happy paths, pagination, 429 backoff, network timeouts, multi-board aggregation, salary parsing, and schema drift.
     - Total verified test suite: 477+ tests passing across backend and frontend with zero regressions.
-  - **Phase 26.4: Wave 2 Connectors (Feed & Structured Sources) — SCHEDULED NEXT**: USAJOBS, Adzuna, Lever, and Remote OK.
+  - **Phase 26.4: Wave 2 Connectors (Feed & Structured Sources) — COMPLETE**:
+    - Implemented 4 production connectors:
+      - `AdzunaConnector`: Official REST API with bounded pagination, international currency mapping, salary min/max extraction, and HTML tag sanitization.
+      - `USAJOBSConnector`: Official REST API with Authorization-Key and User-Agent headers, telework/remote inference, hourly rate annualization, and secret redaction.
+      - `LeverConnector`: Public postings API across multiple company slugs via `LEVER_SITE_TOKENS`, per-company fault isolation, and career categories parsing.
+      - `RemoteOKConnector`: Public JSON feed with legal disclaimer filtering, canonical URL attribution, and tag-to-skills normalization.
+    - Added `LEVER_SITE_TOKENS` to Pydantic `Settings` schema and `.env.example`.
+    - Extended `ConnectorOrchestrator` with `get_all_connectors()` registry unifying all 8 Wave 1 and Wave 2 connectors.
+    - Verified all 4 connectors via both mocked tests (49 passing in `tests/test_phase26_wave2_connectors.py`) and live bounded HTTP calls against official live endpoints.
+    - Total verified test suite: 526 tests passing across backend with zero regressions, clean Ruff and Bandit scans.
+  - **Phase 26.5: Background Ingestion Scheduler & Sync Telemetry Endpoints — SCHEDULED NEXT**: Periodic background sync workers, checkpoint persistence, and connector status monitoring endpoints.
 - **Architectural Specifications & Acceptance Criteria**:
   1. **Dual Ingestion Engine**:
      - Official APIs & Authorized Feeds: Connector modules for structured platforms using authenticated API keys/tokens managed securely via environment variables.

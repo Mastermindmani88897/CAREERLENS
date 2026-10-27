@@ -309,6 +309,7 @@ class GreenhouseConnector(BaseOpportunityConnector):
                 # Rate-limit between board requests (not before the first)
                 if i < len(board_tokens) - 1 and self.rate_limit_delay > 0:
                     import asyncio
+
                     await asyncio.sleep(self.rate_limit_delay)
 
         return ConnectorBatchResult(

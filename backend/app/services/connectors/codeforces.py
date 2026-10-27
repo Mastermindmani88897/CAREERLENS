@@ -103,6 +103,7 @@ def _parse_record(contest: dict[str, Any]) -> RawOpportunityRow | None:
                 event_start_time = datetime.fromtimestamp(int(start_ts), tz=UTC)
                 if duration_seconds and duration_seconds > 0:
                     from datetime import timedelta
+
                     event_end_time = event_start_time + timedelta(seconds=duration_seconds)
             except (OSError, OverflowError, ValueError):
                 event_start_time = None
